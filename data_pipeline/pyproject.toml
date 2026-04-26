@@ -19,12 +19,13 @@ dependencies = [
     "pyarrow>=15.0",
     "pyreadstat>=1.2",
     "duckdb>=1.0",
-    "sidrapy>=0.1.5",
+    "sidrapy>=0.1.4",
     "ipeadatapy>=0.1.9",
     "wbdata>=1.0",
     "structlog>=24.1",
     "pydantic>=2.6",
     "pydantic-settings>=2.2",
+    "psycopg[binary]>=3.1",
 ]
 
 [project.optional-dependencies]
@@ -50,3 +51,8 @@ ignore = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: testes que tocam APIs externas (rede). Requerem -m integration para rodar.",
+    "slow: testes lentos (skip por padrão em CI rápido).",
+]

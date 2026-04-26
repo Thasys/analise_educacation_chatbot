@@ -61,6 +61,14 @@
 - **Formato**: Microdados TXT fixed-width + SAS/SPSS/R; agregados JSON/CSV.
 - **Frequência**: Trimestral (educação básica); anual (módulo ampliado).
 - **Referências**: Neri & Osório em publicações FGV Social sobre retornos à educação; Textos para Discussão IPEA (Costa & Ulyssea).
+- **Coletor implementado** (Fase 1):
+    - **Módulo**: [data_pipeline/src/collectors/ibge/sidra_educacao.py](data_pipeline/src/collectors/ibge/sidra_educacao.py)
+    - **Flow Prefect**: [data_pipeline/src/flows/ibge_sidra.py](data_pipeline/src/flows/ibge_sidra.py) (`ingest_pnad_continua_t7136`)
+    - **Tabela default**: 7136 — *Taxa de analfabetismo das pessoas de 15 anos ou mais, por sexo e cor/raça*.
+    - **URL gerada**: `GET https://apisidra.ibge.gov.br/values/t/7136/n1/all/v/all/p/{ano}` (níveis territoriais e classificações configuráveis).
+    - **Saída Bronze**: `/data/bronze/ibge/sidra_<tabela>/<ano>/data.parquet` (+ `_metadata.json` com SHA-256, schema, URL e timestamp UTC).
+    - **Auditoria**: linha em `ingestion_log` (Postgres) por execução, com status `running → success|failed`.
+    - **Notas**: parsing usa o cabeçalho retornado pela própria API para nomear colunas (ex.: `V`→`Valor`, `D1N`→`Brasil`). Coletor genérico — basta instanciar `SidraEducacaoCollector(table_id=7144, ...)` para outras tabelas da família.
 
 ### 1.7 IBGE – Censo Demográfico (variáveis de educação)
 - **Instituição**: IBGE
