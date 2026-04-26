@@ -1,0 +1,16 @@
+# =============================================================================
+# Caddy — reverse proxy (HTTPS automático em produção).
+# Uso previsto para a Fase 6. Não é iniciado pelo docker-compose da Fase 0.
+# =============================================================================
+
+# Exemplo de configuração para produção on-premise:
+#
+# educacao.exemplo.br {
+#     reverse_proxy /api/* api:8000
+#     reverse_proxy /prefect/* prefect:4200
+#     reverse_proxy /* frontend:3000
+# }
+
+:80 {
+    respond "Caddy OK — configurar site em produção"
+}

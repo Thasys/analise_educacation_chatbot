@@ -1,0 +1,14 @@
+# dbt profiles — conexão com DuckDB.
+# Em produção, este arquivo normalmente vive em ~/.dbt/profiles.yml,
+# mas mantemos uma cópia no projeto para reprodutibilidade.
+
+analise_education:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '../data/duckdb/education.duckdb') }}"
+      threads: 4
+      extensions:
+        - httpfs
+        - parquet

@@ -1,0 +1,117 @@
+# =============================================================================
+# Analise Education Chatbot — Orquestração de serviços (Fase 0)
+# =============================================================================
+# Serviços mínimos para o "hello world" do projeto:
+#   - postgres   : metadados + backend do Prefect
+#   - adminer    : UI web para inspecionar Postgres
+#   - prefect    : servidor de orquestração (UI em :4200)
+#   - api        : FastAPI gateway (docs em :8000/docs)
+#   - frontend   : Next.js hello world (:3000)
+#
+# Para subir tudo:
+#   docker compose up -d
+# Para ver logs:
+#   docker compose logs -f <servico>
+# Para derrubar:
+#   docker compose down
+# =============================================================================
+
+name: analise-education
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: edu_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-educacao}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque_esta_senha}
+      POSTGRES_DB: ${POSTGRES_DB:-educacao_metadata}
+      TZ: ${TZ:-America/Sao_Paulo}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-educacao}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  adminer:
+    image: adminer:latest
+    container_name: edu_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: ${ADMINER_DEFAULT_SERVER:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  prefect:
+    image: prefecthq/prefect:3-latest
+    container_name: edu_prefect
+    restart: unless-stopped
+    command: prefect server start --host 0.0.0.0
+    environment:
+      PREFECT_SERVER_API_HOST: 0.0.0.0
+      PREFECT_SERVER_API_PORT: 4200
+      PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://${POSTGRES_USER:-educacao}:${POSTGRES_PASSWORD:-troque_esta_senha}@postgres:5432/${POSTGRES_PREFECT_DB:-prefect}
+      PREFECT_UI_URL: ${PREFECT_UI_URL:-http://localhost:4200}
+      PREFECT_API_URL: http://localhost:4200/api
+    ports:
+      - "4200:4200"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - prefect_data:/root/.prefect
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: edu_api
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:3000}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-educacao}:${POSTGRES_PASSWORD:-troque_esta_senha}@postgres:5432/${POSTGRES_DB:-educacao_metadata}
+      DUCKDB_PATH: /data/duckdb/education.duckdb
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api/src:/app/src
+      - ./data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: edu_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+    name: edu_postgres_data
+  prefect_data:
+    name: edu_prefect_data
