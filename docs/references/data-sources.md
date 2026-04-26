@@ -244,8 +244,13 @@ Incluem **SAEPE** (Pernambuco), **SIMAVE/PROEB** (Minas Gerais), **SPAECE** (Cea
 - **Formato**: JSON, XML, CSV/Excel, SDMX (Data360).
 - **Frequência**: Anual (alinhada ao UOE).
 - **Referências**: Barro & Lee (2013) *Journal of Development Economics* 104; Filmer & Rogers (2018) *World Development Report 2018: Learning to Realize Education's Promise*.
-
-### 2.11 IEA – TIMSS / PIRLS / ICCS / ICILS
+- **Coletor implementado** (Fase 1):
+    - **Módulo**: [data_pipeline/src/collectors/worldbank/api_client.py](data_pipeline/src/collectors/worldbank/api_client.py)
+    - **Flow Prefect**: [data_pipeline/src/flows/worldbank.py](data_pipeline/src/flows/worldbank.py) (`ingest_education_indicators`)
+    - **Endpoint**: `GET https://api.worldbank.org/v2/country/{países}/indicator/{ID}?date={ano|range}&format=json` — paginação automática até 50 páginas; sem autenticação.
+    - **Indicadores acompanhados na cesta default**: `SE.XPD.TOTL.GD.ZS` (gasto em educação % PIB), `SE.PRM.CMPT.ZS` (conclusão primária), `SE.PRM.ENRR` / `SE.SEC.ENRR` (matrícula bruta), `SE.ADT.LITR.ZS` (alfabetização adulta), `HD.HCI.OVRL` (Human Capital Index).
+    - **Saída Bronze**: `/data/bronze/worldbank/indicator_<id_em_snake>/<período>/data.parquet`. Schema achatado: `indicator_id, indicator_name, country_id, country_name, country_iso3, date, value, unit, obs_status, decimal`.
+    - **Períodos**: aceita ano único (`"2023"`) ou range (`"2010-2023"`) — convertido internamente para `2010:2023` na URL e preservado com `-` no path (compatível com Windows).
 - **Instituição**: IEA (Amsterdã/Hamburgo), com centros internacionais (Boston College para TIMSS/PIRLS, ACER para ICCS)
 - **Descrição**: **TIMSS** – matemática e ciências, 4º e 8º ano, quadrienal (1995, 1999, 2003, 2007, 2011, 2015, 2019, 2023, 2027). **PIRLS** – leitura, 4º ano, quinquenal (2001-2026). **ICCS** – cidadania, 8º ano (2009, 2016, 2022). **ICILS** – letramento computacional e pensamento computacional, 8º ano (2013, 2018, 2023, 2028).
 - **URL**: https://www.iea.nl/studies/iea/ ; https://timssandpirls.bc.edu/ ; https://timss2023.org/data/

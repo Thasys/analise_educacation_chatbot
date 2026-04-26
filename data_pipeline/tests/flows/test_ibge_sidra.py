@@ -1,4 +1,9 @@
-"""Testes do flow Prefect de ingestão SIDRA."""
+"""Testes do flow Prefect de ingestão SIDRA.
+
+Usa `prefect_test_harness` para isolar cada teste em um servidor Prefect
+ephemeral com SQLite — sem depender do Postgres do docker-compose nem
+do PREFECT_API_URL configurado no .env do projeto.
+"""
 
 from __future__ import annotations
 
@@ -7,6 +12,7 @@ from typing import Any
 
 import httpx
 import pytest
+from prefect.testing.utilities import prefect_test_harness
 
 from src.flows import ibge_sidra as flow_module
 
@@ -15,6 +21,13 @@ SAMPLE_PAYLOAD: list[dict[str, Any]] = [
     {"NC": "Nível Territorial (Código)", "V": "Valor", "D1N": "Brasil"},
     {"NC": "1", "V": "6.6", "D1N": "Brasil"},
 ]
+
+
+@pytest.fixture(scope="module", autouse=True)
+def prefect_harness():
+    """Servidor Prefect efêmero para todos os testes do módulo."""
+    with prefect_test_harness():
+        yield
 
 
 @pytest.fixture()

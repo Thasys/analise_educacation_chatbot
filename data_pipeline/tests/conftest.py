@@ -10,6 +10,23 @@ from src.utils.bronze import BronzeWriter
 from src.utils.ingestion_log import IngestionLogger
 
 
+@pytest.fixture(autouse=True)
+def isolate_external_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Remove env vars de servidores externos para garantir hermeticidade.
+
+    O `.env` do projeto aponta para hosts internos do docker-compose
+    (`postgres:5432`, `prefect:4200`). Sem essa limpeza, qualquer teste
+    que toque Prefect ou Postgres tentaria conectar e falharia fora do
+    container.
+    """
+    for var in (
+        "PREFECT_API_URL",
+        "PREFECT_DATABASE_URL",
+        "PREFECT_API_DATABASE_CONNECTION_URL",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
 @pytest.fixture()
 def tmp_bronze_root(tmp_path: Path) -> Path:
     """Diretório temporário para a Bronze, isolado por teste."""
