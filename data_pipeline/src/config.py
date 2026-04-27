@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     ibge_sidra_api_base: str = "https://apisidra.ibge.gov.br"
     worldbank_api_base: str = "https://api.worldbank.org/v2"
     oecd_sdmx_base: str = "https://sdmx.oecd.org/public/rest"
+    ipea_odata_api_base: str = "http://www.ipeadata.gov.br/api/odata4"
 
     # ---- limites de rede ---------------------------------------------------
     http_timeout_seconds: float = 120.0
