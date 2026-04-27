@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     oecd_sdmx_base: str = "https://sdmx.oecd.org/public/rest"
     ipea_odata_api_base: str = "http://www.ipeadata.gov.br/api/odata4"
     unesco_uis_api_base: str = "https://api.uis.unesco.org/sdmx"
+    eurostat_api_base: str = (
+        "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0"
+    )
 
     # ---- limites de rede ---------------------------------------------------
     http_timeout_seconds: float = 120.0
