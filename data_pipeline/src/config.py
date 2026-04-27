@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     worldbank_api_base: str = "https://api.worldbank.org/v2"
     oecd_sdmx_base: str = "https://sdmx.oecd.org/public/rest"
     ipea_odata_api_base: str = "http://www.ipeadata.gov.br/api/odata4"
+    unesco_uis_api_base: str = "https://api.uis.unesco.org/sdmx"
 
     # ---- limites de rede ---------------------------------------------------
     http_timeout_seconds: float = 120.0
