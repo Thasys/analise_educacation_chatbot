@@ -1,0 +1,10 @@
+isced_level,descricao_pt,descricao_en
+0,Educacao infantil,Early childhood education
+1,Anos iniciais do EF,Primary education
+2,Anos finais do EF,Lower secondary education
+3,Ensino medio,Upper secondary education
+4,Pos-secundario nao-superior,Post-secondary non-tertiary education
+5,Educacao terciaria curta,Short-cycle tertiary education
+6,Bacharelado,Bachelor's or equivalent
+7,Mestrado,Master's or equivalent
+8,Doutorado,Doctoral or equivalent

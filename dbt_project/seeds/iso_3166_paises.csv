@@ -1,0 +1,99 @@
+iso2,iso3,name_pt,name_en,un_m49,grouping
+BR,BRA,Brasil,Brazil,76,latam
+AR,ARG,Argentina,Argentina,32,latam
+BO,BOL,Bolivia,Bolivia,68,latam
+CL,CHL,Chile,Chile,152,latam_oecd
+CO,COL,Colombia,Colombia,170,latam_oecd
+CR,CRI,Costa Rica,Costa Rica,188,latam_oecd
+CU,CUB,Cuba,Cuba,192,latam
+DO,DOM,Republica Dominicana,Dominican Republic,214,latam
+EC,ECU,Equador,Ecuador,218,latam
+SV,SLV,El Salvador,El Salvador,222,latam
+GT,GTM,Guatemala,Guatemala,320,latam
+HN,HND,Honduras,Honduras,340,latam
+HT,HTI,Haiti,Haiti,332,latam
+JM,JAM,Jamaica,Jamaica,388,latam
+MX,MEX,Mexico,Mexico,484,latam_oecd
+NI,NIC,Nicaragua,Nicaragua,558,latam
+PA,PAN,Panama,Panama,591,latam
+PE,PER,Peru,Peru,604,latam
+PY,PRY,Paraguai,Paraguay,600,latam
+TT,TTO,Trinidad e Tobago,Trinidad and Tobago,780,latam
+UY,URY,Uruguai,Uruguay,858,latam
+VE,VEN,Venezuela,Venezuela,862,latam
+US,USA,Estados Unidos,United States,840,oecd_g7
+CA,CAN,Canada,Canada,124,oecd_g7
+GB,GBR,Reino Unido,United Kingdom,826,oecd_g7
+FR,FRA,Franca,France,250,oecd_g7
+DE,DEU,Alemanha,Germany,276,oecd_g7
+IT,ITA,Italia,Italy,380,oecd_g7
+JP,JPN,Japao,Japan,392,oecd_g7
+AT,AUT,Austria,Austria,40,oecd
+BE,BEL,Belgica,Belgium,56,oecd
+DK,DNK,Dinamarca,Denmark,208,oecd
+FI,FIN,Finlandia,Finland,246,oecd
+GR,GRC,Grecia,Greece,300,oecd
+IS,ISL,Islandia,Iceland,352,oecd
+IE,IRL,Irlanda,Ireland,372,oecd
+LU,LUX,Luxemburgo,Luxembourg,442,oecd
+NL,NLD,Paises Baixos,Netherlands,528,oecd
+NO,NOR,Noruega,Norway,578,oecd
+PT,PRT,Portugal,Portugal,620,oecd
+ES,ESP,Espanha,Spain,724,oecd
+SE,SWE,Suecia,Sweden,752,oecd
+CH,CHE,Suica,Switzerland,756,oecd
+TR,TUR,Turquia,Turkey,792,oecd
+AU,AUS,Australia,Australia,36,oecd
+NZ,NZL,Nova Zelandia,New Zealand,554,oecd
+KR,KOR,Coreia do Sul,Korea Republic,410,oecd
+CZ,CZE,Tchequia,Czechia,203,oecd
+HU,HUN,Hungria,Hungary,348,oecd
+PL,POL,Polonia,Poland,616,oecd
+SK,SVK,Eslovaquia,Slovakia,703,oecd
+SI,SVN,Eslovenia,Slovenia,705,oecd
+EE,EST,Estonia,Estonia,233,oecd
+LV,LVA,Letonia,Latvia,428,oecd
+LT,LTU,Lituania,Lithuania,440,oecd
+IL,ISR,Israel,Israel,376,oecd
+LI,LIE,Liechtenstein,Liechtenstein,438,europe_other
+BG,BGR,Bulgaria,Bulgaria,100,europe_other
+RO,ROU,Romenia,Romania,642,europe_other
+HR,HRV,Croacia,Croatia,191,europe_other
+RS,SRB,Servia,Serbia,688,europe_other
+UA,UKR,Ucrania,Ukraine,804,europe_other
+BY,BLR,Bielorrussia,Belarus,112,europe_other
+MD,MDA,Moldavia,Moldova,498,europe_other
+AL,ALB,Albania,Albania,8,europe_other
+MK,MKD,Macedonia do Norte,North Macedonia,807,europe_other
+BA,BIH,Bosnia e Herzegovina,Bosnia and Herzegovina,70,europe_other
+ME,MNE,Montenegro,Montenegro,499,europe_other
+CY,CYP,Chipre,Cyprus,196,europe_other
+MT,MLT,Malta,Malta,470,europe_other
+RU,RUS,Russia,Russian Federation,643,brics
+CN,CHN,China,China,156,brics
+IN,IND,India,India,356,brics
+ZA,ZAF,Africa do Sul,South Africa,710,brics
+ID,IDN,Indonesia,Indonesia,360,asia
+TH,THA,Tailandia,Thailand,764,asia
+VN,VNM,Vietna,Viet Nam,704,asia
+PH,PHL,Filipinas,Philippines,608,asia
+MY,MYS,Malasia,Malaysia,458,asia
+SG,SGP,Cingapura,Singapore,702,asia
+HK,HKG,Hong Kong,Hong Kong,344,asia
+TW,TWN,Taiwan,Taiwan,158,asia
+KZ,KAZ,Cazaquistao,Kazakhstan,398,asia
+PK,PAK,Paquistao,Pakistan,586,asia
+BD,BGD,Bangladesh,Bangladesh,50,asia
+LK,LKA,Sri Lanka,Sri Lanka,144,asia
+NP,NPL,Nepal,Nepal,524,asia
+EG,EGY,Egito,Egypt,818,africa_mena
+MA,MAR,Marrocos,Morocco,504,africa_mena
+TN,TUN,Tunisia,Tunisia,788,africa_mena
+DZ,DZA,Argelia,Algeria,12,africa_mena
+NG,NGA,Nigeria,Nigeria,566,africa_mena
+KE,KEN,Quenia,Kenya,404,africa_mena
+SA,SAU,Arabia Saudita,Saudi Arabia,682,africa_mena
+AE,ARE,Emirados Arabes Unidos,United Arab Emirates,784,africa_mena
+QA,QAT,Catar,Qatar,634,africa_mena
+JO,JOR,Jordania,Jordan,400,africa_mena
+LB,LBN,Libano,Lebanon,422,africa_mena

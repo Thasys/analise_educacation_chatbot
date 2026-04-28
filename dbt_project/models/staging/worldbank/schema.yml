@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: stg_worldbank__indicators
+    description: >
+      Staging unificado dos indicadores do World Bank. Empilha todos os
+      parquets sob `bronze/worldbank/indicator_*/<periodo>/`. Cada linha
+      e uma observacao (indicador, pais, ano). Inclui agregados regionais
+      (AFE, EAS, WLD) que serao filtrados na intermediate via JOIN com
+      a seed iso_3166_paises.
+    columns:
+      - name: indicator_native_id
+        description: "Codigo nativo do indicador (ex.: SE.XPD.TOTL.GD.ZS)."
+        tests:
+          - not_null
+      - name: indicator_name
+        description: Rotulo legivel do indicador.
+        tests:
+          - not_null
+      - name: country_iso3
+        description: >
+          Codigo ISO-3166 alpha-3 ou agregado regional. Validado contra
+          a seed na intermediate.
+        tests:
+          - not_null
+      - name: year
+        description: Ano da observacao, extraido via safe_to_year().
+        tests:
+          - not_null
+      - name: value
+        description: Valor numerico observado (pode ser NULL para missing).
+      - name: unit
+        description: Unidade de medida quando aplicavel.
+      - name: obs_status
+        description: Flag de status da observacao quando provida pela API.

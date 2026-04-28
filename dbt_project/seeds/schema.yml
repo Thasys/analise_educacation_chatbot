@@ -1,0 +1,92 @@
+version: 2
+
+seeds:
+  - name: iso_3166_paises
+    description: >
+      Catalogo de paises ISO-3166 (alpha2, alpha3, M49) com nomes em PT/EN
+      e agrupamento analitico (latam, oecd, brics, ...). Usado para
+      harmonizar codigos de pais entre fontes (BR vs BRA vs 76) e para
+      filtrar agregados regionais (ex.: AFE, EAS, WLD do World Bank que
+      nao sao paises reais).
+    columns:
+      - name: iso2
+        description: Codigo ISO-3166 alpha-2 (2 letras).
+        tests:
+          - not_null
+          - unique
+      - name: iso3
+        description: Codigo ISO-3166 alpha-3 (3 letras). Chave canonica do projeto.
+        tests:
+          - not_null
+          - unique
+      - name: name_pt
+        description: Nome do pais em portugues (sem acentos para portabilidade).
+        tests:
+          - not_null
+      - name: name_en
+        description: Nome do pais em ingles.
+        tests:
+          - not_null
+      - name: un_m49
+        description: Codigo numerico M49 da ONU.
+        tests:
+          - not_null
+          - unique
+      - name: grouping
+        description: Agrupamento analitico (latam, oecd, brics, asia, africa_mena, europe_other).
+
+  - name: ibge_ufs
+    description: >
+      27 unidades da federacao do Brasil com codigo IBGE de 2 digitos,
+      sigla, nome e regiao. Usado para harmonizar dados subnacionais
+      (SIDRA, IPEADATA, INEP).
+    columns:
+      - name: uf_code
+        description: Codigo IBGE de 2 digitos (11-53).
+        tests:
+          - not_null
+          - unique
+      - name: sigla
+        description: Sigla de 2 letras (RO, AC, AM, ...).
+        tests:
+          - not_null
+          - unique
+      - name: nome
+        description: Nome oficial da UF.
+        tests:
+          - not_null
+          - unique
+      - name: regiao_codigo
+        description: Codigo da regiao (1=Norte, 2=Nordeste, ..., 5=Centro-Oeste).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["1", "2", "3", "4", "5"]
+      - name: regiao_nome
+        description: Nome da regiao.
+        tests:
+          - not_null
+
+  - name: isced_2011
+    description: >
+      Niveis ISCED 2011 da UNESCO (0-8). Permite mapear apelidos
+      especificos de cada fonte (ED1, L1, "Anos Iniciais EF") para
+      o codigo canonico ISCED.
+    columns:
+      - name: isced_level
+        description: Codigo ISCED (0 a 8).
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              arguments:
+                values: ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
+      - name: descricao_pt
+        description: Descricao em portugues.
+        tests:
+          - not_null
+      - name: descricao_en
+        description: Descricao em ingles (canonica UNESCO).
+        tests:
+          - not_null

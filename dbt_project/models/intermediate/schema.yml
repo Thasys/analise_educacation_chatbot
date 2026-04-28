@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: int_geografia__paises_harmonizados
+    description: >
+      Subset da seed iso_3166_paises com os paises que aparecem em
+      pelo menos uma staging table. Serve como tabela canonica de
+      referencia para joins (filtra agregados regionais do World Bank
+      como AFE, EAS, WLD).
+    columns:
+      - name: country_iso3
+        description: Codigo ISO-3166 alpha-3 (chave canonica).
+        tests:
+          - not_null
+          - unique
+      - name: iso2
+        description: Codigo ISO-3166 alpha-2.
+        tests:
+          - not_null
+      - name: name_pt
+        tests:
+          - not_null
+      - name: un_m49
+        tests:
+          - not_null
+
+  - name: int_indicadores__gasto_educacao
+    description: >
+      Primeiro indicador no schema canonico Silver: gasto publico em
+      educacao como % do PIB. Fontes empilhadas via UNION ALL (atualmente
+      so World Bank). Filtrado contra a seed de paises (drops agregados).
+    columns:
+      - name: country_iso3
+        description: Codigo ISO-3 do pais.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_geografia__paises_harmonizados')
+                field: country_iso3
+      - name: year
+        description: Ano da observacao.
+        tests:
+          - not_null
+      - name: value
+        description: Valor do indicador (% PIB para esta tabela).
+        tests:
+          - not_null
+      - name: unit
+        description: Unidade canonica.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["%_GDP"]
+      - name: indicator_id
+        description: ID canonico do indicador (do projeto).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["GASTO_EDU_PIB"]
+      - name: source
+        description: Fonte original (worldbank, oecd, unesco, ...).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["worldbank", "oecd", "unesco", "eurostat"]

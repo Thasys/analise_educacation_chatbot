@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: stg_ibge__sidra_7136
+    description: >
+      Staging da tabela SIDRA 7136 da PNAD Continua Educacao. Renomeia
+      colunas PT-BR para snake_case ASCII e converte `Valor` (que vem
+      como string com marcadores `..`, `...`, `-`) para DOUBLE via
+      safe_to_double(). Suporta agregacao multi-ano via glob.
+    columns:
+      - name: territory_level_code
+        description: Codigo do nivel territorial IBGE (1=Brasil, 2=Grandes Regioes, 3=UFs, ...).
+        tests:
+          - not_null
+      - name: territory_code
+        description: >
+          Codigo do territorio dentro do nivel. Vazio quando nivel=1
+          (Brasil); IBGE-2 quando UF; IBGE-7 quando municipio.
+      - name: variable_code
+        description: Codigo da variavel/indicador SIDRA.
+        tests:
+          - not_null
+      - name: variable_name
+        description: Nome da variavel/indicador.
+        tests:
+          - not_null
+      - name: year
+        description: Ano de referencia, extraido via safe_to_year().
+        tests:
+          - not_null
+      - name: value
+        description: Valor numerico (NULL para missing markers).
+      - name: unit_name
+        description: "Unidade de medida (ex.: 'Mil pessoas', '%')."

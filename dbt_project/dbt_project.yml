@@ -18,6 +18,34 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+vars:
+  # Raiz da Camada Bronze relativa ao dbt_project/. Sobreponível via env DBT_BRONZE_ROOT.
+  bronze_root: "{{ env_var('DBT_BRONZE_ROOT', '../data/bronze') }}"
+
+seeds:
+  analise_education:
+    +schema: seeds
+    iso_3166_paises:
+      +column_types:
+        iso2: VARCHAR
+        iso3: VARCHAR
+        name_pt: VARCHAR
+        name_en: VARCHAR
+        un_m49: INTEGER
+        grouping: VARCHAR
+    ibge_ufs:
+      +column_types:
+        uf_code: VARCHAR
+        sigla: VARCHAR
+        nome: VARCHAR
+        regiao_codigo: VARCHAR
+        regiao_nome: VARCHAR
+    isced_2011:
+      +column_types:
+        isced_level: VARCHAR
+        descricao_pt: VARCHAR
+        descricao_en: VARCHAR
+
 models:
   analise_education:
     staging:
