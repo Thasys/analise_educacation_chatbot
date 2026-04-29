@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: stg_ipea__series
+    description: >
+      Staging unificado das series IPEADATA. Empilha todos os parquets
+      sob `bronze/ipea/serie_*/<periodo>/`. Series cobrem multiplos
+      niveis territoriais (Brasil, Estados, Municipios, Regioes) -- a
+      harmonizacao de NIVNOME para `territory_level` canonico ocorre
+      em intermediate.
+    columns:
+      - name: series_code
+        description: Codigo IPEADATA da serie (SERCODIGO).
+        tests:
+          - not_null
+      - name: value_timestamp
+        description: Timestamp de referencia da observacao (VALDATA).
+      - name: year
+        description: Ano extraido de VALDATA.
+        tests:
+          - not_null
+      - name: value
+        description: Valor numerico da observacao (VALVALOR).
+      - name: territory_level_name
+        description: "Nome do nivel territorial (NIVNOME): Brasil, Estados, Municipios, Regioes."
+        tests:
+          - not_null
+      - name: territory_code
+        description: >
+          Codigo IBGE do territorio. Vazio/`0` para nivel Brasil; IBGE-2
+          para UF; IBGE-7 para municipio; codigo de regiao para regioes.

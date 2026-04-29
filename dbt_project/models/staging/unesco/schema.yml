@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_unesco__indicators
+    description: >
+      Staging unificado dos indicadores do UIS Data API (REST). Empilha
+      todos os parquets sob `bronze/unesco/indicator_*/<periodo>/`.
+      Cada linha e uma observacao (indicador, pais, ano).
+    columns:
+      - name: indicator_native_id
+        description: "Codigo UIS do indicador (ex.: CR.1, NER.1, XGOVEXP.IMF)."
+        tests:
+          - not_null
+      - name: country_iso3
+        description: ISO-3 do pais (UIS usa geoUnit em ISO-3 alpha-3).
+        tests:
+          - not_null
+      - name: year
+        description: Ano da observacao.
+        tests:
+          - not_null
+      - name: value
+        description: Valor numerico da observacao.
+      - name: magnitude
+        description: Anotacao de magnitude (UIS), quando aplicavel.
+      - name: qualifier
+        description: Anotacao qualitativa (UIS), quando aplicavel.

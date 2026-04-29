@@ -16,15 +16,19 @@ with worldbank_countries as (
 
 ),
 
--- A medida que outras fontes ficarem em staging com country_iso3,
--- empilhar aqui via UNION:
---
--- cepalstat_countries as (...),
--- unesco_countries as (...),
+unesco_countries as (
+
+    select distinct country_iso3
+    from {{ ref('stg_unesco__indicators') }}
+    where country_iso3 is not null
+
+),
 
 union_observed as (
 
     select country_iso3 from worldbank_countries
+    union
+    select country_iso3 from unesco_countries
 
 )
 

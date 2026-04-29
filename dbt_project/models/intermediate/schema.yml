@@ -6,7 +6,7 @@ models:
       Subset da seed iso_3166_paises com os paises que aparecem em
       pelo menos uma staging table. Serve como tabela canonica de
       referencia para joins (filtra agregados regionais do World Bank
-      como AFE, EAS, WLD).
+      como AFE, EAS, WLD; codigos invalidos do UIS; etc.).
     columns:
       - name: country_iso3
         description: Codigo ISO-3166 alpha-3 (chave canonica).
@@ -24,11 +24,75 @@ models:
         tests:
           - not_null
 
+  - name: int_geografia__ufs_brasil
+    description: >
+      Tabela canonica das 27 UFs do Brasil (codigo IBGE 2-dig + sigla +
+      regiao). Inclui flag de presenca em IPEADATA (territory_level_name
+      = 'Estados') para auditoria de cobertura.
+    columns:
+      - name: uf_code
+        description: Codigo IBGE de 2 digitos (11-53).
+        tests:
+          - not_null
+          - unique
+      - name: sigla
+        description: Sigla da UF (RO, AC, ..., DF).
+        tests:
+          - not_null
+          - unique
+      - name: nome
+        description: Nome oficial da UF.
+        tests:
+          - not_null
+      - name: regiao_codigo
+        description: Codigo da regiao (1=Norte ... 5=Centro-Oeste).
+        tests:
+          - not_null
+      - name: country_iso3
+        description: Sempre 'BRA'.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["BRA"]
+      - name: observed_in_ipea
+        description: Se houver observacao com NIVNOME='Estados' contendo este uf_code.
+
+  - name: int_classificacoes__isced_2011
+    description: >
+      Tabela canonica ISCED 2011 (UNESCO) com aliases por fonte para
+      facilitar JOINs entre stagings que carregam o nivel ISCED em
+      formatos diferentes (Eurostat ED1/ED2, OCDE ISCED11_1, UIS L1).
+    columns:
+      - name: isced_level
+        description: Codigo ISCED (0 a 8).
+        tests:
+          - not_null
+          - unique
+      - name: descricao_pt
+        tests:
+          - not_null
+      - name: descricao_en
+        tests:
+          - not_null
+      - name: eurostat_alias
+        description: "Apelido Eurostat (ED0..ED8)."
+        tests:
+          - not_null
+      - name: oecd_alias
+        description: "Apelido OCDE (ISCED11_0..ISCED11_8)."
+        tests:
+          - not_null
+      - name: uis_alias
+        description: "Apelido UNESCO UIS (L0..L8)."
+        tests:
+          - not_null
+
   - name: int_indicadores__gasto_educacao
     description: >
-      Primeiro indicador no schema canonico Silver: gasto publico em
-      educacao como % do PIB. Fontes empilhadas via UNION ALL (atualmente
-      so World Bank). Filtrado contra a seed de paises (drops agregados).
+      Indicador no schema canonico Silver: gasto publico em educacao
+      como % do PIB. Fontes empilhadas via UNION ALL (worldbank +
+      unesco). Filtrado contra a seed de paises (drops agregados).
     columns:
       - name: country_iso3
         description: Codigo ISO-3 do pais.
