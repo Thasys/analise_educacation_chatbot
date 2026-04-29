@@ -1,4 +1,4 @@
-"""Testes do flow Prefect CEPALSTAT."""
+"""Testes do flow Prefect CEPALSTAT (REST v1)."""
 
 from __future__ import annotations
 
@@ -12,19 +12,33 @@ from prefect.testing.utilities import prefect_test_harness
 from src.flows import cepalstat as flow_module
 
 
-SAMPLE_PAYLOAD: dict[str, Any] = {
-    "data": [
-        {
-            "country_id": "76",
-            "country_name": "Brasil",
-            "country_iso3": "BRA",
-            "year": 2020,
-            "value": 6.6,
-            "unit": "%",
-            "source": "Encuesta",
-            "notes": None,
-        }
-    ]
+SAMPLE_DATA_PAYLOAD: dict[str, Any] = {
+    "header": {"success": True, "code": 200},
+    "body": {
+        "metadata": {
+            "indicator_id": 2236,
+            "indicator_name": "Literacy rate",
+            "unit": "Percentage",
+        },
+        "data": [
+            {"value": "97.29", "iso3": "BRA",
+             "dim_144": 146, "dim_208": 222, "dim_29117": 68309},
+        ],
+    },
+}
+
+SAMPLE_DIMS_PAYLOAD: dict[str, Any] = {
+    "header": {"success": True, "code": 200},
+    "body": {
+        "dimensions": [
+            {"id": 144, "name": "Sex__ESTANDAR",
+             "members": [{"id": 146, "name": "Both sexes"}]},
+            {"id": 208, "name": "Country__ESTANDAR",
+             "members": [{"id": 222, "name": "Brazil"}]},
+            {"id": 29117, "name": "Years__ESTANDAR",
+             "members": [{"id": 68309, "name": "2020"}]},
+        ]
+    },
 }
 
 
@@ -40,11 +54,12 @@ def patch_collector(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     bronze_root.mkdir()
 
     def fake_client_factory() -> httpx.Client:
-        return httpx.Client(
-            transport=httpx.MockTransport(
-                lambda req: httpx.Response(200, json=SAMPLE_PAYLOAD)
-            )
-        )
+        def handler(request: httpx.Request) -> httpx.Response:
+            if "/dimensions" in request.url.path:
+                return httpx.Response(200, json=SAMPLE_DIMS_PAYLOAD)
+            return httpx.Response(200, json=SAMPLE_DATA_PAYLOAD)
+
+        return httpx.Client(transport=httpx.MockTransport(handler))
 
     original_init = flow_module.CepalstatCollector.__init__
 
@@ -60,10 +75,10 @@ def patch_collector(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
 
 def test_flow_runs_for_explicit_indicators(patch_collector: Path) -> None:
     results = flow_module.ingest_cepalstat_indicators(
-        indicators=["1471", "1407"], reference_period="2020"
+        indicators=["2236", "53"], reference_period="2020"
     )
     assert len(results) == 2
-    assert {r["dataset"] for r in results} == {"indicator_1471", "indicator_1407"}
+    assert {r["dataset"] for r in results} == {"indicator_2236", "indicator_53"}
     for r in results:
         assert Path(r["parquet_path"]).exists()
 

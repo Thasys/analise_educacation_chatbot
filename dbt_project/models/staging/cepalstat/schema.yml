@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: stg_cepalstat__indicators
+    description: >
+      Staging unificado dos indicadores CEPALSTAT (CEPAL/ECLAC). Empilha
+      todos os parquets sob `bronze/cepalstat/indicator_*/<periodo>/`.
+      O coletor ja resolve dim_* IDs em colunas canonicas via endpoint
+      /dimensions (year, sex, country_iso3, country_name). Cada linha e
+      uma observacao por (indicador, pais, ano, sexo).
+    columns:
+      - name: indicator_native_id
+        description: "ID numerico do indicador CEPALSTAT (ex.: '2236', '53', '460')."
+        tests:
+          - not_null
+      - name: indicator_name
+        description: Nome do indicador (em ingles, vem do metadata da CEPAL).
+        tests:
+          - not_null
+      - name: country_iso3
+        description: ISO-3 do pais.
+        tests:
+          - not_null
+      - name: year
+        description: Ano da observacao.
+        tests:
+          - not_null
+      - name: value
+        description: Valor numerico (NULL para missing markers da CEPAL).
+      - name: sex
+        description: "Categoria de sexo (Both sexes / Men / Women)."

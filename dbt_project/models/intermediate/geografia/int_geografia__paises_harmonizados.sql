@@ -32,6 +32,14 @@ oecd_countries as (
 
 ),
 
+cepalstat_countries as (
+
+    select distinct country_iso3
+    from {{ ref('stg_cepalstat__indicators') }}
+    where country_iso3 is not null
+
+),
+
 union_observed as (
 
     select country_iso3 from worldbank_countries
@@ -39,6 +47,8 @@ union_observed as (
     select country_iso3 from unesco_countries
     union
     select country_iso3 from oecd_countries
+    union
+    select country_iso3 from cepalstat_countries
 
 )
 

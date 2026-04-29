@@ -10,6 +10,9 @@
 --   - IPEADATA   (PNADCA_TXA15MUF e ADH_T_ANALF15M) -- BR/UFs/municipios
 --                                     em ANALFABETISMO; convertido para
 --                                     alfabetizacao via (100 - value).
+--   - CEPALSTAT  (indicador 2236)  -- LATAM, literacy rate por sexo;
+--                                     filtramos sex='Both sexes' para
+--                                     alinhar ao schema canonico.
 --
 -- ATENCAO METODOLOGICA: as 3 fontes usam definicoes parecidas mas nao
 -- identicas:
@@ -96,12 +99,40 @@ ipea_raw as (
 
 ),
 
+cepalstat_raw as (
+
+    {#
+        CEPALSTAT indicador 2236 = literacy rate (% 15+) por sexo.
+        Filtramos `sex='Both sexes'` para alinhar com o nivel agregado
+        de UIS/WB/IPEA. As versoes por sexo (Men/Women) ficam para um
+        intermediate desagregado em sprint posterior.
+    #}
+    select
+        country_iso3,
+        year,
+        value,
+        cast('%' as varchar)                 as unit,
+        cast('LITERACY_15M' as varchar)      as indicator_id,
+        cast('Taxa de alfabetizacao 15+ (%)' as varchar) as indicator_name,
+        cast('cepalstat' as varchar)         as source,
+        cast(indicator_native_id as varchar) as source_indicator_id
+    from {{ ref('stg_cepalstat__indicators') }}
+    where indicator_native_id = '2236'
+      and sex = 'Both sexes'
+      and value is not null
+      and country_iso3 is not null
+      and year is not null
+
+),
+
 unioned_raw as (
     select * from worldbank_raw
     union all
     select * from unesco_raw
     union all
     select * from ipea_raw
+    union all
+    select * from cepalstat_raw
 ),
 
 deduped as (
