@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: stg_eurostat__datasets
+    description: >
+      Staging unificado dos datasets Eurostat (JSON-stat 2.0). Empilha
+      via UNION BY NAME 3 datasets com schemas diferentes -- as colunas
+      especificas de cada dataset ficam NULL nos demais. O codigo do
+      dataset e extraido do path do parquet para auditoria de proveniencia.
+    columns:
+      - name: dataset_code
+        description: "Codigo Eurostat do dataset (ex.: educ_uoe_enrt01, educ_uoe_fine01, edat_lfse_14)."
+        tests:
+          - not_null
+      - name: country_iso2_raw
+        description: ISO-3166 alpha-2 do pais (Eurostat usa alpha-2; harmonizado para ISO-3 na intermediate).
+        tests:
+          - not_null
+      - name: year
+        description: Ano extraido de `time` via safe_to_year (cobre formatos YYYY, YYYY-Q1, YYYYM03).
+      - name: value
+        description: Valor numerico (OBS_VALUE).
+      - name: obs_status
+        description: Flag SDMX de status (`A`, `E`, `M`, etc.).
+      - name: unit
+        description: "Unidade (ex.: NR, MIO_EUR, PC)."
+      - name: isced_alias
+        description: "Codigo ISCED 2011 no formato Eurostat (ED0..ED8). NULL se o dataset nao classifica por nivel."

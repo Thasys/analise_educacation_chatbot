@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_oecd__flows
+    description: >
+      Staging unificado dos dataflows OCDE (SDMX-JSON 2.0). Empilha
+      via UNION BY NAME multiplos dataflows do Education at a Glance
+      (DSD_EAG_UOE_FIN). Codigo do flow extraido do path. Schema
+      nucleo SDMX (REF_AREA, TIME_PERIOD, OBS_VALUE, OBS_STATUS,
+      MEASURE, EDUCATION_LEV) sempre presente; dimensoes especificas
+      (EXP_SOURCE, EXP_DESTINATION, etc.) ficam NULL onde nao aplicaveis.
+    columns:
+      - name: flow_code
+        description: "Slug do dataflow (ex.: flow_oecd_edu_imep_dsd_eag_uoe_fin_df_uoe_indic_fin_gdp_1_0)."
+        tests:
+          - not_null
+      - name: country_iso3
+        description: REF_AREA — codigo ISO-3 do pais.
+        tests:
+          - not_null
+      - name: year
+        description: Ano extraido de TIME_PERIOD via safe_to_year.
+      - name: value
+        description: OBS_VALUE — valor numerico da observacao.
+      - name: measure
+        description: "Tipo de medida (ex.: EXP, FIN_PERSTUD)."
+        tests:
+          - not_null
+      - name: education_level_alias
+        description: "Nivel ISCED no formato OCDE (ex.: ISCED11_3, ISCED11_T). NULL para totais."
+      - name: unit_measure
+        description: "Unidade da observacao (ex.: PT_B1GQ = % do PIB, USD_PPP)."

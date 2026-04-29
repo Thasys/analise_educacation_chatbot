@@ -24,11 +24,21 @@ unesco_countries as (
 
 ),
 
+oecd_countries as (
+
+    select distinct country_iso3
+    from {{ ref('stg_oecd__flows') }}
+    where country_iso3 is not null
+
+),
+
 union_observed as (
 
     select country_iso3 from worldbank_countries
     union
     select country_iso3 from unesco_countries
+    union
+    select country_iso3 from oecd_countries
 
 )
 
