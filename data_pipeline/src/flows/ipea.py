@@ -16,11 +16,12 @@ from src.utils.ingestion_log import IngestionLogger
 # Cesta inicial de séries IPEADATA acompanhadas. Foco em educação básica
 # brasileira; expansões futuras devem ser adicionadas com justificativa
 # (cada série puxa um payload independente para a Bronze).
+# Codigos revalidados em 2026-04-28 — series legadas ANALF15M/IDEB_BR_*
+# foram aposentadas e substituidas por equivalentes da PNAD Continua e
+# Atlas DH. IDEB nao tem mais espelho em IPEADATA — usar coletor INEP.
 DEFAULT_EDUCATION_SERIES: list[str] = [
-    "ANALF15M",     # taxa de analfabetismo, 15 anos+
-    "IDEB_BR_SAI",  # IDEB Brasil, anos iniciais
-    "IDEB_BR_SAF",  # IDEB Brasil, anos finais
-    "IDEB_BR_EM",   # IDEB Brasil, ensino médio
+    "PNADCA_TXA15MUF",  # Taxa de analfabetismo 15+ (PNAD Continua, BR + UFs)
+    "ADH_T_ANALF15M",   # Taxa de analfabetismo 15+ (Atlas DH - Censo, decenal)
 ]
 
 

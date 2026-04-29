@@ -1,4 +1,10 @@
-"""Prefect flows para ingestão de dataflows UNESCO UIS (SDMX-JSON 2.0)."""
+"""Prefect flows para ingestão de indicadores UNESCO UIS (REST API publica).
+
+Em fevereiro/2026 a UIS migrou da arquitetura SDMX para REST. Este flow
+agora usa `UisRestCollector` apontando para `api.uis.unesco.org/api/public`.
+O coletor SDMX legado permanece em `src/collectors/unesco/uis_client.py`
+para referencia historica (mas o endpoint subjacente esta fora do ar).
+"""
 
 from __future__ import annotations
 
@@ -7,41 +13,44 @@ from typing import Any
 from prefect import flow, task
 from prefect.logging import get_run_logger
 
-from src.collectors.unesco.uis_client import UisCollector
+from src.collectors.unesco.uis_rest_client import UisRestCollector
 from src.config import settings
 from src.utils.bronze import BronzeWriteResult, BronzeWriter
 from src.utils.ingestion_log import IngestionLogger
 
 
-# Cesta default — dataflows UIS centrais para comparações BR×Internacional.
-DEFAULT_FLOW_REFS: list[str] = [
-    "UNESCO,EDU_NON_FINANCE,1.0",  # matrículas, conclusão, atendimento
-    "UNESCO,EDU_FINANCE,1.0",      # gasto público em educação
-    "UNESCO,SDG,1.0",              # indicadores ODS 4
+# Cesta default — indicadores UIS centrais para comparações BR×Internacional.
+# Codigos da Data Browser (https://databrowser.uis.unesco.org/).
+DEFAULT_INDICATORS: list[str] = [
+    "CR.1",          # Taxa de conclusao do ensino fundamental
+    "CR.2",          # Taxa de conclusao do ensino medio
+    "NER.1",         # Taxa liquida de matricula no fundamental
+    "NER.2",         # Taxa liquida de matricula no medio
+    "XGDP.FSGOV",    # Gasto governamental em educacao (% PIB)
+    "XGOVEXP.IMF",   # Gasto em educacao (% gasto govt total) -- NAO equivale a % PIB
+    "FOSEP.1.GPV",   # Gasto governo por aluno (PPP, fundamental)
+    "LR.AG15T99",    # Taxa de alfabetizacao 15+ (UIS estimativas)
 ]
 
 
 @task(retries=3, retry_delay_seconds=60)
-def collect_uis_flow(
-    flow_ref: str,
+def collect_uis_indicator(
+    indicator: str,
     reference_period: str,
     *,
-    countries: str | None = None,
-    key: str = "",
+    geo_unit: str | None = None,
 ) -> dict[str, Any]:
-    """Coleta um dataflow UIS para um período (ano único, range ou 'all')."""
+    """Coleta um indicador UIS para um período (ano único, range ou 'all')."""
     logger = get_run_logger()
     logger.info(
-        "Coletando UIS flow=%s período=%s países=%s key=%r",
-        flow_ref,
+        "Coletando UIS indicator=%s período=%s geoUnit=%s",
+        indicator,
         reference_period,
-        countries,
-        key,
+        geo_unit,
     )
-    collector = UisCollector(
-        flow_ref=flow_ref,
-        countries=countries,
-        key=key,
+    collector = UisRestCollector(
+        indicator=indicator,
+        geo_unit=geo_unit,
         bronze_writer=BronzeWriter(settings.bronze_root),
         ingestion_logger=IngestionLogger(settings.effective_database_url),
     )
@@ -49,39 +58,40 @@ def collect_uis_flow(
     return result.to_dict()
 
 
-@flow(name="unesco-uis-education-flows")
-def ingest_uis_education_flows(
-    flow_refs: list[str] | None = None,
+@flow(name="unesco-uis-education-indicators")
+def ingest_uis_education_indicators(
+    indicators: list[str] | None = None,
     *,
     reference_period: str = "2000-2023",
-    countries: str | None = None,
+    geo_unit: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Ingere uma cesta de dataflows UIS para um range de anos.
+    """Ingere uma cesta de indicadores UIS para um range de anos.
 
     Args:
-        flow_refs: lista de dataflows; default = DEFAULT_FLOW_REFS.
+        indicators: lista de codigos UIS; default = DEFAULT_INDICATORS.
         reference_period: 'all', ano único ou range 'YYYY-YYYY'.
-        countries: filtro REF_AREA (ex.: 'BRA' ou 'BRA+USA+FIN'). None = todos.
+        geo_unit: filtro ISO-3 do pais (ex.: 'BRA' ou 'BRA,USA,FIN').
+            None = todos os paises.
     """
-    flow_refs = flow_refs or DEFAULT_FLOW_REFS
+    indicators = indicators or DEFAULT_INDICATORS
     logger = get_run_logger()
     logger.info(
-        "Iniciando ingestão de %d dataflows UIS período=%s",
-        len(flow_refs),
+        "Iniciando ingestão de %d indicadores UIS período=%s",
+        len(indicators),
         reference_period,
     )
 
     results: list[dict[str, Any]] = []
-    for ref in flow_refs:
+    for code in indicators:
         results.append(
-            collect_uis_flow(
-                flow_ref=ref,
+            collect_uis_indicator(
+                indicator=code,
                 reference_period=reference_period,
-                countries=countries,
+                geo_unit=geo_unit,
             )
         )
     return results
 
 
 if __name__ == "__main__":
-    ingest_uis_education_flows()
+    ingest_uis_education_indicators()

@@ -14,9 +14,13 @@ from src.utils.ingestion_log import IngestionLogger
 
 
 # Cesta inicial — indicadores LATAM-comparáveis para BR × América Latina.
+# IDs revalidados em 2026-04-28 contra o catálogo `thematic-tree` do novo host
+# api-cepalstat.cepal.org. IDs antigos (1471/1407) foram aposentados.
 DEFAULT_CEPALSTAT_INDICATORS: list[str] = [
-    "1471",  # Tasa de analfabetismo, 15 años o más
-    "1407",  # Años de estudio promedio, 25-59 años
+    "2236",  # Literacy rate of population aged 15+, by sex
+    "53",    # Illiteracy rate by sex, age group and area
+    "460",   # Public expenditure on education
+    "184",   # Net enrollment rate by sex and level of education
 ]
 
 

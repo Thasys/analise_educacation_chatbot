@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     eurostat_api_base: str = (
         "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0"
     )
-    cepalstat_api_base: str = "https://statistics.cepal.org/portal/cepalstat/api/v1"
+    cepalstat_api_base: str = "https://api-cepalstat.cepal.org/cepalstat/api/v1"
 
     # ---- limites de rede ---------------------------------------------------
     http_timeout_seconds: float = 120.0

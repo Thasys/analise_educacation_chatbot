@@ -14,9 +14,11 @@ from src.utils.ingestion_log import IngestionLogger
 
 
 # Cesta default — dataflows centrais do Education at a Glance (EAG).
+# IDs revalidados em 2026-04-28 contra o catalogo OECD SDMX (sdmx.oecd.org).
+# A famila DSD_EAG_FIN foi reorganizada em DSD_EAG_UOE_FIN no ciclo atual.
 DEFAULT_OECD_FLOWS: list[str] = [
-    "OECD.EDU.IMEP,DSD_EAG_FIN@DF_FIN_PERSTUDENT,1.0",   # gasto por aluno
-    "OECD.EDU.IMEP,DSD_EAG_NEAC@DF_NEAC_DIST,1.0",       # attainment ISCED
+    "OECD.EDU.IMEP,DSD_EAG_UOE_FIN@DF_UOE_INDIC_FIN_GDP,1.0",      # gasto educacao % PIB
+    "OECD.EDU.IMEP,DSD_EAG_UOE_FIN@DF_UOE_INDIC_FIN_PERSTUD,3.1",  # gasto por aluno
 ]
 
 
