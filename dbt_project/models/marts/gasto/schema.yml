@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: mart_br_vs_ocde__gasto_educacao_timeseries
+    description: >
+      Gasto publico em educacao (% PIB) por pais e ano para Brasil + OCDE
+      (38 paises OCDE oficiais incluindo OCDE-G7 e LATAM-OCDE).
+      Pivoteado por fonte (worldbank/unesco/oecd) e enriquecido com
+      estatisticas OCDE (mean/median/p25/p75) e indicadores derivados
+      (zscore, percentil, gap, trend slope/R2). Recorte temporal: 2010-2023.
+      Estatisticas OCDE excluem BRA para nao viesar a comparacao.
+    config:
+      tags: ['gold', 'gasto']
+    columns:
+      - name: country_iso3
+        description: ISO-3 do pais (BRA + OCDE).
+        tests:
+          - not_null
+      - name: country_name
+        description: Nome do pais em PT-BR.
+        tests:
+          - not_null
+      - name: grouping
+        description: "Grupo analitico da seed (`oecd`, `oecd_g7`, `latam_oecd`, `latam` para BRA)."
+        tests:
+          - not_null
+      - name: year
+        description: Ano da observacao (2010-2023).
+        tests:
+          - not_null
+      - name: value_worldbank
+        description: "Gasto educacao % PIB segundo World Bank (SE.XPD.TOTL.GD.ZS)."
+      - name: value_unesco
+        description: "Gasto educacao % PIB segundo UNESCO UIS (XGDP.FSGOV)."
+      - name: value_oecd
+        description: "Gasto educacao % PIB segundo OECD EAG (DSD_EAG_UOE_FIN, base UOE)."
+      - name: value_canonical
+        description: "Valor canonico = coalesce(value_worldbank, value_unesco). Em geral identicos; OECD nao usado por divergencia metodologica UOE vs GFS-IMF."
+      - name: oecd_mean
+        description: "Media OCDE (excluindo BRA) no mesmo ano."
+      - name: oecd_median
+        description: "Mediana OCDE (excluindo BRA) no mesmo ano."
+      - name: oecd_p25
+        description: "Percentil 25 OCDE (excluindo BRA) no mesmo ano."
+      - name: oecd_p75
+        description: "Percentil 75 OCDE (excluindo BRA) no mesmo ano."
+      - name: oecd_countries_with_data
+        description: "Numero de paises OCDE (excluindo BRA) com value_canonical no ano."
+      - name: zscore_in_oecd_year
+        description: >
+          Z-score de value_canonical contra OCDE no ano. Formula:
+          (value - avg(value)) / stddev_samp(value) over (partition by year).
+          NULL quando stddev=0 (so um pais com dado).
+      - name: percentile_in_oecd_year
+        description: >
+          Percentil rank em [0, 1] dentro do conjunto OCDE+BRA no ano
+          (ordenacao crescente -- 1.0 = pior, 0.0 = melhor).
+      - name: gap_to_oecd_mean
+        description: "Diferenca em pp: value_canonical - oecd_mean."
+      - name: gap_pct_to_oecd_mean
+        description: "Diferenca relativa: (value_canonical - oecd_mean) / oecd_mean * 100."
+      - name: trend_slope_full_period
+        description: "Slope da regressao linear value ~ year (DuckDB regr_slope). Constante por pais (nao varia com year). Valores positivos = tendencia de crescimento."
+      - name: trend_r2_full_period
+        description: "R^2 da mesma regressao. Constante por pais. Alto R^2 + slope nao-trivial = tendencia confiavel."

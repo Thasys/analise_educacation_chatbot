@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: mart_alfabetizacao__latam_2020s
+    description: >
+      Taxa de alfabetizacao 15+ (%) por pais e ano para Brasil + LATAM
+      (20 paises latino-americanos, incluindo LATAM-OCDE). Pivoteado por
+      fonte (worldbank/unesco/cepalstat/ipea) e enriquecido com
+      estatisticas LATAM (mean/median/p25/p75/min/max) e indicadores
+      derivados (zscore, percentil, gap_to_latam_mean, gap_to_bra,
+      trend_slope_2020s). Recorte temporal: 2020-2024.
+    config:
+      tags: ['gold', 'alfabetizacao']
+    columns:
+      - name: country_iso3
+        description: ISO-3 do pais (BRA + LATAM).
+        tests:
+          - not_null
+      - name: country_name
+        description: Nome do pais em PT-BR.
+        tests:
+          - not_null
+      - name: grouping
+        description: "Grupo analitico (`latam`, `latam_oecd`)."
+        tests:
+          - not_null
+      - name: year
+        description: Ano da observacao (2020-2024).
+        tests:
+          - not_null
+      - name: value_worldbank
+        description: "Literacy rate 15+ segundo World Bank (SE.ADT.LITR.ZS)."
+      - name: value_unesco
+        description: "Literacy rate 15+ segundo UNESCO UIS (LR.AG15T99). Fonte primaria; WB ressindica."
+      - name: value_cepalstat
+        description: "Literacy rate 15+ segundo CEPALSTAT (indicador 2236, sex='Both sexes')."
+      - name: value_ipea
+        description: "Literacy rate 15+ segundo IPEA (PNADCA invertido). So BRA."
+      - name: value_canonical
+        description: "Valor canonico = coalesce(unesco, worldbank, cepalstat). Prioriza fontes internacionais para comparabilidade."
+      - name: latam_mean
+        description: "Media LATAM (incluindo BRA) no mesmo ano."
+      - name: latam_median
+        description: "Mediana LATAM no mesmo ano."
+      - name: zscore_in_latam_year
+        description: >
+          Z-score de value_canonical contra LATAM no ano. NULL quando
+          stddev=0 (so um pais com dado).
+      - name: percentile_in_latam_year
+        description: >
+          Percentil rank em [0, 1] dentro de LATAM no ano (ordem crescente).
+      - name: gap_to_latam_mean
+        description: "Diferenca em pp: value_canonical - latam_mean."
+      - name: gap_to_bra
+        description: "Diferenca em pp: value_canonical - value_BRA(year). NULL para BRA mesmo."
+      - name: trend_slope_2020s
+        description: "Slope da regressao linear value ~ year sobre 2020-2024 (DuckDB regr_slope). Constante por pais."

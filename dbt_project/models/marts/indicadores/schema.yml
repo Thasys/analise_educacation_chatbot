@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: mart_indicadores__rankings_recente
+    description: >
+      Rankings cross-indicador no ano mais recente disponivel por
+      (indicador, fonte). Une todos os int_indicadores__* (gasto +
+      alfabetizacao) e calcula rank global, rank dentro do agrupamento
+      analitico, e percentil_rank global.
+    config:
+      tags: ['gold', 'rankings']
+    columns:
+      - name: indicator_id
+        description: ID canonico do indicador (`GASTO_EDU_PIB`, `LITERACY_15M`).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["GASTO_EDU_PIB", "LITERACY_15M"]
+      - name: source
+        description: Fonte original (worldbank, unesco, oecd, ipea, cepalstat).
+        tests:
+          - not_null
+      - name: country_iso3
+        description: ISO-3 do pais.
+        tests:
+          - not_null
+      - name: year
+        description: Ano da observacao (mais recente disponivel por indicador-fonte).
+        tests:
+          - not_null
+      - name: value
+        description: Valor do indicador.
+        tests:
+          - not_null
+      - name: rank_global
+        description: "Rank descendente entre todos os paises com dado naquele (indicador, fonte, ano). 1 = maior valor."
+        tests:
+          - not_null
+      - name: countries_global
+        description: Total de paises com dado naquele (indicador, fonte, ano).
+        tests:
+          - not_null
+      - name: rank_in_grouping
+        description: Rank descendente dentro do grouping analitico (oecd, latam, etc.).
+      - name: percentile_rank_global
+        description: "Percentil rank em [0,1] global. 1.0 = maior valor; 0.0 = menor."
