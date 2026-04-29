@@ -88,11 +88,53 @@ models:
         tests:
           - not_null
 
+  - name: int_indicadores__alfabetizacao
+    description: >
+      Taxa de alfabetizacao da populacao 15+ (%). Fontes empilhadas
+      via UNION ALL: World Bank, UNESCO UIS, IPEA (PNADCA + Atlas DH,
+      convertidos de analfabetismo para alfabetizacao via 100 - value).
+      Restrito ao nivel pais; subnacional vai para intermediate proprio.
+    columns:
+      - name: country_iso3
+        description: Codigo ISO-3 do pais.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_geografia__paises_harmonizados')
+                field: country_iso3
+      - name: year
+        description: Ano da observacao.
+        tests:
+          - not_null
+      - name: value
+        description: Taxa de alfabetizacao (% 0-100).
+        tests:
+          - not_null
+      - name: indicator_id
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["LITERACY_15M"]
+      - name: source
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["worldbank", "unesco", "ipea"]
+      - name: unit
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["%"]
+
   - name: int_indicadores__gasto_educacao
     description: >
       Indicador no schema canonico Silver: gasto publico em educacao
       como % do PIB. Fontes empilhadas via UNION ALL (worldbank +
-      unesco). Filtrado contra a seed de paises (drops agregados).
+      unesco + oecd). Filtrado contra a seed de paises (drops agregados).
     columns:
       - name: country_iso3
         description: Codigo ISO-3 do pais.
