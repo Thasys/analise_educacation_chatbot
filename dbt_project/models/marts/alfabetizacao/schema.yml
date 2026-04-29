@@ -28,16 +28,45 @@ models:
         description: Ano da observacao (2020-2024).
         tests:
           - not_null
+          - accepted_range:
+              arguments:
+                min_value: 2020
+                max_value: 2030
       - name: value_worldbank
         description: "Literacy rate 15+ segundo World Bank (SE.ADT.LITR.ZS)."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
       - name: value_unesco
         description: "Literacy rate 15+ segundo UNESCO UIS (LR.AG15T99). Fonte primaria; WB ressindica."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
       - name: value_cepalstat
         description: "Literacy rate 15+ segundo CEPALSTAT (indicador 2236, sex='Both sexes')."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
       - name: value_ipea
         description: "Literacy rate 15+ segundo IPEA (PNADCA invertido). So BRA."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
       - name: value_canonical
         description: "Valor canonico = coalesce(unesco, worldbank, cepalstat). Prioriza fontes internacionais para comparabilidade."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
       - name: latam_mean
         description: "Media LATAM (incluindo BRA) no mesmo ano."
       - name: latam_median
@@ -46,9 +75,19 @@ models:
         description: >
           Z-score de value_canonical contra LATAM no ano. NULL quando
           stddev=0 (so um pais com dado).
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: -5
+                max_value: 5
       - name: percentile_in_latam_year
         description: >
           Percentil rank em [0, 1] dentro de LATAM no ano (ordem crescente).
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
       - name: gap_to_latam_mean
         description: "Diferenca em pp: value_canonical - latam_mean."
       - name: gap_to_bra

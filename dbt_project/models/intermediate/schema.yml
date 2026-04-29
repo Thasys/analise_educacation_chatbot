@@ -111,6 +111,10 @@ models:
         description: Taxa de alfabetizacao (% 0-100).
         tests:
           - not_null
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
       - name: indicator_id
         tests:
           - not_null
@@ -152,6 +156,10 @@ models:
         description: Valor do indicador (% PIB para esta tabela).
         tests:
           - not_null
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 30
       - name: unit
         description: Unidade canonica.
         tests:

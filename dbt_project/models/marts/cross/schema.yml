@@ -35,10 +35,18 @@ models:
         description: "Gasto educacao % PIB (fonte: World Bank, identica a UIS por construcao)."
         tests:
           - not_null
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 30
       - name: alfab_value
         description: "Literacy rate 15+ %% (fonte: coalesce UNESCO -> WB -> CEPAL)."
         tests:
           - not_null
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
       - name: efficiency_ratio
         description: >
           alfab_value / gasto_value. Heuristica de eficiencia. Valores
@@ -46,8 +54,18 @@ models:
           tem ratio ~20).
       - name: zscore_gasto_year
         description: Z-score de gasto_value contra todos os paises com dado no ano.
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: -5
+                max_value: 5
       - name: zscore_alfab_year
         description: Z-score de alfab_value contra todos os paises com dado no ano.
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: -5
+                max_value: 5
       - name: zscore_diff_alfab_minus_gasto
         description: >
           zscore_alfab - zscore_gasto. Positivo = alfabetizacao
@@ -55,5 +73,15 @@ models:
           Negativo = gasto relativamente alto pra alfabetizacao baixa.
       - name: percentile_gasto_year
         description: Percentil de gasto no ano (0=min, 1=max).
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
       - name: percentile_alfab_year
         description: Percentil de alfabetizacao no ano (0=min, 1=max).
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1

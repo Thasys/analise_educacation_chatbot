@@ -45,3 +45,8 @@ models:
         description: Rank descendente dentro do grouping analitico (oecd, latam, etc.).
       - name: percentile_rank_global
         description: "Percentil rank em [0,1] global. 1.0 = maior valor; 0.0 = menor."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1

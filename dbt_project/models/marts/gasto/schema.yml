@@ -28,14 +28,38 @@ models:
         description: Ano da observacao (2010-2023).
         tests:
           - not_null
+          - accepted_range:
+              arguments:
+                min_value: 2010
+                max_value: 2030
       - name: value_worldbank
         description: "Gasto educacao % PIB segundo World Bank (SE.XPD.TOTL.GD.ZS)."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 30
       - name: value_unesco
         description: "Gasto educacao % PIB segundo UNESCO UIS (XGDP.FSGOV)."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 30
       - name: value_oecd
         description: "Gasto educacao % PIB segundo OECD EAG (DSD_EAG_UOE_FIN, base UOE)."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 30
       - name: value_canonical
         description: "Valor canonico = coalesce(value_worldbank, value_unesco). Em geral identicos; OECD nao usado por divergencia metodologica UOE vs GFS-IMF."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 30
       - name: oecd_mean
         description: "Media OCDE (excluindo BRA) no mesmo ano."
       - name: oecd_median
@@ -51,10 +75,20 @@ models:
           Z-score de value_canonical contra OCDE no ano. Formula:
           (value - avg(value)) / stddev_samp(value) over (partition by year).
           NULL quando stddev=0 (so um pais com dado).
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: -5
+                max_value: 5
       - name: percentile_in_oecd_year
         description: >
           Percentil rank em [0, 1] dentro do conjunto OCDE+BRA no ano
           (ordenacao crescente -- 1.0 = pior, 0.0 = melhor).
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
       - name: gap_to_oecd_mean
         description: "Diferenca em pp: value_canonical - oecd_mean."
       - name: gap_pct_to_oecd_mean

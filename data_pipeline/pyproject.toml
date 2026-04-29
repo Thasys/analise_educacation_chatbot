@@ -56,4 +56,5 @@ addopts = "-ra --strict-markers"
 markers = [
     "integration: testes que tocam APIs externas (rede). Requerem -m integration para rodar.",
     "slow: testes lentos (skip por padrão em CI rápido).",
+    "quality: data quality / Great Expectations contra Silver/Gold no DuckDB. Requerem dbt build executado antes.",
 ]
