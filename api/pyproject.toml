@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "edu-api"
 version = "0.1.0"
 description = "FastAPI gateway para o sistema de análise comparada BR × Internacional em educação"
-readme = "../README.md"
 requires-python = ">=3.11"
 authors = [
     { name = "Tharsys Ribeiro", email = "tharsyssribeiro@gmail.com" }
