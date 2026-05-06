@@ -1,16 +1,79 @@
 # =============================================================================
-# Caddy — reverse proxy (HTTPS automático em produção).
-# Uso previsto para a Fase 6. Não é iniciado pelo docker-compose da Fase 0.
+# Caddy — reverse proxy para single origin do frontend.
+#
+# Sprint 6.5 (Fase 6): rotas funcionais para os 3 servicos.
+#
+# Topologia:
+#   /api/chat/*  -> agents-server:8001  (chat streaming SSE — Fase 5/Sprint 6.1)
+#   /api/data/*  -> api:8000            (dados Gold — Fase 4)
+#   /health      -> api:8000            (liveness)
+#   /*           -> frontend:3000       (Next.js)
+#
+# Em producao com dominio publico, descomente o bloco com hostname e
+# Caddy obtem certificado Let's Encrypt automaticamente.
 # =============================================================================
 
-# Exemplo de configuração para produção on-premise:
+# -------- Producao on-premise (com TLS automatico) -----------------------
 #
 # educacao.exemplo.br {
-#     reverse_proxy /api/* api:8000
-#     reverse_proxy /prefect/* prefect:4200
+#     # Streaming SSE: nao bufferizar
+#     handle_path /api/chat/* {
+#         reverse_proxy agents-server:8001 {
+#             flush_interval -1
+#             header_up X-Forwarded-Proto {scheme}
+#             transport http {
+#                 read_buffer 4096
+#                 response_header_timeout 0
+#             }
+#         }
+#     }
+#     handle_path /api/* {
+#         reverse_proxy api:8000
+#     }
 #     reverse_proxy /* frontend:3000
+#
+#     log {
+#         output file /var/log/caddy/access.log
+#         format json
+#     }
 # }
 
+# -------- Desenvolvimento local (HTTP simples em :8443) ------------------
+
+:8443 {
+    # SSE precisa de flush imediato e sem buffering
+    handle /api/chat/* {
+        reverse_proxy localhost:8001 {
+            flush_interval -1
+            transport http {
+                response_header_timeout 0
+                dial_timeout 5s
+            }
+        }
+    }
+
+    # Dados Gold (catalog, timeseries, compare, ranking)
+    handle /api/* {
+        reverse_proxy localhost:8000
+    }
+
+    # Health check do api/
+    handle /health {
+        reverse_proxy localhost:8000
+    }
+
+    # Frontend Next.js (catch-all)
+    reverse_proxy localhost:3000
+
+    # Logs estruturados em stdout
+    log {
+        output stdout
+        format console
+    }
+}
+
+# -------- Heartbeat na :80 ------------------------------------------------
 :80 {
-    respond "Caddy OK — configurar site em produção"
+    respond /caddy-status "Caddy OK - proxy reverso ativo na :8443" 200
+    redir /* http://localhost:8443{uri} permanent
 }
