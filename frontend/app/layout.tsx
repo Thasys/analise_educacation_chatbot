@@ -1,24 +1,22 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { ProfileTheme } from '@/components/layout/ProfileTheme';
+import { QueryProvider } from '@/components/layout/QueryProvider';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Análise Educacional Comparada',
+  title: 'EduCompara — Análise Educacional Comparada',
   description: 'Sistema de análise comparada Brasil × Internacional em educação básica',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <body
-        style={{
-          margin: 0,
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif',
-          background: '#0b1220',
-          color: '#e6edf7',
-        }}
-      >
-        {children}
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body className="font-sans antialiased">
+        <QueryProvider>
+          <ProfileTheme />
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

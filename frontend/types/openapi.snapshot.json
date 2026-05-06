@@ -1,0 +1,544 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Analise Educacional Comparada — API",
+    "description": "Gateway unificado para o sistema de analise comparada Brasil x Internacional em educacao basica. Expoe endpoints de dados (catalog, timeseries, compare, ranking) consumindo os marts Gold materializados em DuckDB pelo dbt.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data/catalog": {
+      "get": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Get Catalog",
+        "description": "Lista marts Gold disponiveis com metadata, contagens e tags.",
+        "operationId": "get_catalog_api_data_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data/timeseries": {
+      "post": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Get Timeseries",
+        "description": "Serie temporal de um indicador para um pais (multi-fonte).",
+        "operationId": "get_timeseries_api_data_timeseries_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeseriesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data/compare": {
+      "post": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Post Compare",
+        "description": "Comparacao de varios paises em um indicador-ano-fonte.",
+        "operationId": "post_compare_api_data_compare_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/data/ranking": {
+      "post": {
+        "tags": [
+          "data"
+        ],
+        "summary": "Post Ranking",
+        "description": "Ranking de paises em um indicador, opcionalmente filtrado por grouping.",
+        "operationId": "post_ranking_api_data_ranking_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RankingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CompareRequest": {
+        "properties": {
+          "indicator": {
+            "type": "string",
+            "enum": [
+              "GASTO_EDU_PIB",
+              "LITERACY_15M"
+            ],
+            "title": "Indicator"
+          },
+          "countries": {
+            "items": {
+              "type": "string",
+              "maxLength": 3,
+              "minLength": 3,
+              "pattern": "^[A-Z]{3}$",
+              "description": "Codigo ISO-3166 alpha-3 (3 letras maiusculas)."
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Countries",
+            "description": "Lista de codigos ISO-3 a comparar (1 a 50 paises)."
+          },
+          "year": {
+            "type": "integer",
+            "maximum": 2030.0,
+            "minimum": 1990.0,
+            "title": "Year"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "worldbank",
+              "unesco",
+              "oecd",
+              "eurostat",
+              "ipea",
+              "cepalstat"
+            ],
+            "title": "Source",
+            "description": "Fonte canonica para a comparacao (default: worldbank).",
+            "default": "worldbank"
+          }
+        },
+        "type": "object",
+        "required": [
+          "indicator",
+          "countries",
+          "year"
+        ],
+        "title": "CompareRequest",
+        "description": "Comparacao de varios paises em um indicador para um ano."
+      },
+      "DataResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "DataResponse",
+        "description": "Envelope padrao: {data: [...], meta: {...}}."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "service",
+          "version",
+          "timestamp"
+        ],
+        "title": "HealthResponse"
+      },
+      "RankingRequest": {
+        "properties": {
+          "indicator": {
+            "type": "string",
+            "enum": [
+              "GASTO_EDU_PIB",
+              "LITERACY_15M"
+            ],
+            "title": "Indicator"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2030.0,
+                "minimum": 1990.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year",
+            "description": "Ano especifico. None = ano mais recente disponivel."
+          },
+          "grouping": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "oecd",
+                  "oecd_g7",
+                  "latam_oecd",
+                  "latam",
+                  "brics",
+                  "asia",
+                  "africa_mena",
+                  "europe_other"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grouping",
+            "description": "Filtra por grupo analitico (oecd, latam, ...). None = global."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "worldbank",
+              "unesco",
+              "oecd",
+              "eurostat",
+              "ipea",
+              "cepalstat"
+            ],
+            "title": "Source",
+            "default": "worldbank"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 20
+          }
+        },
+        "type": "object",
+        "required": [
+          "indicator"
+        ],
+        "title": "RankingRequest",
+        "description": "Ranking de paises em um indicador, opcionalmente filtrado por grupo."
+      },
+      "ResponseMeta": {
+        "properties": {
+          "total_rows": {
+            "type": "integer",
+            "title": "Total Rows"
+          },
+          "query_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query Ms"
+          },
+          "sources": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sources"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "extra": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_rows"
+        ],
+        "title": "ResponseMeta",
+        "description": "Metadados que acompanham toda resposta de dados.\n\nPermite que o frontend e os agentes saibam qual foi a abrangencia\nda query sem precisar contar linhas."
+      },
+      "TimeseriesRequest": {
+        "properties": {
+          "indicator": {
+            "type": "string",
+            "enum": [
+              "GASTO_EDU_PIB",
+              "LITERACY_15M"
+            ],
+            "title": "Indicator"
+          },
+          "country_iso3": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "title": "Country Iso3",
+            "description": "Codigo ISO-3166 alpha-3 (3 letras maiusculas)."
+          },
+          "year_start": {
+            "type": "integer",
+            "maximum": 2030.0,
+            "minimum": 1990.0,
+            "title": "Year Start",
+            "default": 2000
+          },
+          "year_end": {
+            "type": "integer",
+            "maximum": 2030.0,
+            "minimum": 1990.0,
+            "title": "Year End",
+            "default": 2024
+          },
+          "sources": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "worldbank",
+                    "unesco",
+                    "oecd",
+                    "eurostat",
+                    "ipea",
+                    "cepalstat"
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sources",
+            "description": "Filtra por fontes (default: todas as disponiveis para o indicador)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "indicator",
+          "country_iso3"
+        ],
+        "title": "TimeseriesRequest",
+        "description": "Request para serie temporal de um indicador-pais."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

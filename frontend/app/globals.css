@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==============================================================
+   Variáveis CSS — tema dark default ("research-grade").
+   Variantes por perfil sao aplicadas via [data-profile="..."].
+   Paleta espelha o scaffold da Fase 0: #0b1220 (bg) / #e6edf7 (fg).
+   ============================================================== */
+
+@layer base {
+  :root {
+    /* slate dark — default + researcher */
+    --background: 222 36% 9%; /* #0b1220 */
+    --foreground: 219 33% 94%; /* #e6edf7 */
+
+    --card: 222 30% 13%;
+    --card-foreground: 219 33% 94%;
+
+    --muted: 222 23% 18%;
+    --muted-foreground: 219 15% 65%;
+
+    --border: 222 28% 22%;
+    --input: 222 28% 22%;
+    --ring: 217 91% 60%;
+
+    --primary: 217 91% 60%; /* azul */
+    --primary-foreground: 0 0% 100%;
+
+    --accent: 222 28% 22%;
+    --accent-foreground: 219 33% 94%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --radius: 0.625rem;
+  }
+
+  /* Perfil "policy" — tom institucional, mais azul */
+  [data-profile='policy'] {
+    --primary: 213 73% 50%;
+    --accent: 213 28% 22%;
+    --ring: 213 73% 55%;
+  }
+
+  /* Perfil "student" — tom amigavel, accent verde */
+  [data-profile='student'] {
+    --primary: 158 64% 42%;
+    --accent: 158 25% 22%;
+    --ring: 158 64% 50%;
+    --radius: 0.875rem; /* mais arredondado */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 180ms;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+  /* researcher usa serif no corpo da resposta (densidade academica) */
+  [data-profile='researcher'] .prose-body {
+    @apply font-serif;
+  }
+  /* student tem letter-spacing levemente mais aberto (legibilidade) */
+  [data-profile='student'] .prose-body {
+    letter-spacing: 0.01em;
+    line-height: 1.7;
+  }
+}
