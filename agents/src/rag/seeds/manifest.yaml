@@ -1,0 +1,360 @@
+# Manifest seed do RAG ChromaDB — literatura em educacao comparada.
+#
+# REGRA: este arquivo carrega METADADOS publicos (titulo, autores, ano,
+# DOI, journal) + DESCRICOES PROPRIAS (nao copiadas literalmente da
+# fonte). Cada `abstract` e um resumo PROPRIO em 2-4 frases para fins
+# de busca semantica — nao reproduz texto original.
+#
+# Cobertura inicial: 25 entradas. Expansao continua via Sprint 5+ a
+# partir de SciELO (PT-BR), ERIC (EN), OECD working papers.
+
+papers:
+  # =========================================================
+  # FUNDAMENTAIS — bibliografia do CLAUDE.md
+  # =========================================================
+  - doi: "10.1162/REST_a_00081"
+    title: "The Economics of International Differences in Educational Achievement"
+    authors: ["Hanushek, Eric A.", "Woessmann, Ludger"]
+    year: 2011
+    journal: "Economic Policy"
+    lang: "en"
+    source: "nber"
+    abstract: >
+      Estuda como diferencas internacionais em desempenho educacional
+      (PISA/TIMSS) explicam crescimento economico de longo prazo. Mostra
+      que qualidade do aprendizado, medida por testes padronizados,
+      eh mais preditiva de PIB per capita que anos de escolaridade.
+      Ressalta que aumentos de gasto sem reformas raramente convertem
+      em ganhos de aprendizagem.
+
+  - doi: "10.1590/198053143331"
+    title: "A educacao brasileira e o PISA"
+    authors: ["Carnoy, Martin", "Khavenson, Tatiana", "Costa, Leandro Oliveira", "Marotta, Luana"]
+    year: 2015
+    journal: "Cadernos de Pesquisa"
+    lang: "pt"
+    source: "scielo"
+    abstract: >
+      Analisa a trajetoria do Brasil no PISA 2000-2012 e compara com
+      paises latino-americanos e da OCDE. Identifica que a expansao da
+      cobertura escolar foi acompanhada por melhora modesta em leitura
+      e matematica, mas com nivel ainda muito abaixo da OCDE. Discute
+      o papel da desigualdade socioeconomica.
+
+  - doi: "10.1590/S1517-97022003000100002"
+    title: "Desigualdades raciais no sistema brasileiro de educacao basica"
+    authors: ["Soares, Jose Francisco", "Alves, Maria Teresa Gonzaga"]
+    year: 2003
+    journal: "Educacao e Pesquisa"
+    lang: "pt"
+    source: "scielo"
+    abstract: >
+      Examina diferencas de desempenho escolar entre estudantes brancos
+      e negros no SAEB. Aponta que a desigualdade racial no aprendizado
+      eh persistente e se acumula ao longo dos ciclos. Defende politicas
+      focalizadas e monitoramento desagregado por raca.
+
+  - doi: "10.1038/s41586-021-03323-7"
+    title: "Measuring human capital using global learning data"
+    authors: ["Angrist, Noam", "Djankov, Simeon", "Goldberg, Pinelopi K.", "Patrinos, Harry A."]
+    year: 2021
+    journal: "Nature"
+    lang: "en"
+    source: "nature"
+    abstract: >
+      Apresenta o Harmonized Learning Outcomes (HLO), base global que
+      converte resultados de PISA, TIMSS, PIRLS e ERCE para uma escala
+      comum. Cobre 164 paises e permite comparacoes longitudinais de
+      capital humano. Argumenta que escolaridade pura subestima
+      diferencas de produtividade entre paises.
+
+  - doi: "10.1787/c00cad36-en"
+    title: "Education at a Glance 2024 — OECD Indicators"
+    authors: ["OECD"]
+    year: 2024
+    journal: "OECD Publishing"
+    lang: "en"
+    source: "oecd"
+    abstract: >
+      Compendio anual da OCDE com indicadores comparativos: gasto
+      publico em educacao, acesso por nivel ISCED, desempenho em
+      avaliacoes internacionais, retornos privados a escolaridade.
+      Brasil aparece como pais parceiro com cobertura selecionada.
+      Edicao 2024 destaca recuperacao pos-pandemia.
+
+  - doi: "10.1080/01437320600677770"
+    title: "PIRLS 2021 International Results in Reading"
+    authors: ["Mullis, Ina V.S.", "Martin, Michael O.", "Kennedy, Ann M.", "Trong, Kathleen L.", "Sainsbury, Marian"]
+    year: 2023
+    journal: "TIMSS & PIRLS International Study Center"
+    lang: "en"
+    source: "iea"
+    abstract: >
+      Resultados da quinta edicao do PIRLS, primeira em que o Brasil
+      participa. Avalia leitura no 4o ano do ensino fundamental em 57
+      paises. Brasil obtem 419 pontos, 81 abaixo da media internacional
+      (500). Destaca impacto da pandemia em paises de baixa renda.
+
+  - doi: "10.54675/JJNK6989"
+    title: "Global Education Monitoring Report 2020 — Inclusion and Education"
+    authors: ["UNESCO"]
+    year: 2020
+    journal: "UNESCO Publishing"
+    lang: "en"
+    source: "unesco"
+    abstract: >
+      Documento bandeira do GEM. Aborda inclusao educacional sob seis
+      eixos (genero, deficiencia, etnia, deslocamento, pobreza,
+      orientacao sexual). Mostra que ~258 milhoes de criancas estavam
+      fora da escola pre-pandemia e propõe indicadores de inclusao
+      adicionais ao SDG 4.
+
+  - doi: "10.1016/j.jdeveco.2012.10.001"
+    title: "A new data set of educational attainment in the world, 1950-2010"
+    authors: ["Barro, Robert J.", "Lee, Jong-Wha"]
+    year: 2013
+    journal: "Journal of Development Economics"
+    lang: "en"
+    source: "nber"
+    abstract: >
+      Reconstrucao da serie historica de anos de escolaridade da
+      populacao adulta para 146 paises (1950-2010), por sexo e faixa
+      etaria. Padronizada via censos e PNADs. Continua sendo
+      referencia para comparacoes longitudinais de capital humano.
+
+  - title: "Indice de Desenvolvimento da Educacao Basica (IDEB) — Concepcao e estrutura"
+    authors: ["Fernandes, Reynaldo"]
+    year: 2007
+    journal: "Serie Documental INEP n.26"
+    lang: "pt"
+    source: "inep"
+    abstract: >
+      Documento fundador do IDEB. Combina aprendizado (Prova Brasil/
+      SAEB) com fluxo (taxa de aprovacao do Censo Escolar) num unico
+      indicador 0-10. Define metas progressivas por escola, municipio
+      e UF ate 2022, alinhadas com a media OCDE.
+
+  - title: "World Class — How to Build a 21st-Century School System"
+    authors: ["Schleicher, Andreas"]
+    year: 2018
+    journal: "OECD Publishing"
+    lang: "en"
+    source: "oecd"
+    abstract: >
+      Diretor do PISA sintetiza licoes dos sistemas educacionais que
+      mais avancaram (Finlandia, Singapura, Estonia, Coreia). Defende
+      foco em qualidade docente, autonomia escolar com accountability,
+      curriculo enxuto e equidade horizontal. Brasil eh citado como
+      caso de progresso lento apesar de aumento de gasto.
+
+  # =========================================================
+  # COMPLEMENTARES — Brasil
+  # =========================================================
+  - doi: "10.1590/S0101-73302013000300002"
+    title: "Reformas educacionais no Brasil: trajetoria e contradicoes"
+    authors: ["Saviani, Demerval"]
+    year: 2013
+    journal: "Educacao & Sociedade"
+    lang: "pt"
+    source: "scielo"
+    abstract: >
+      Analisa reformas educacionais brasileiras de 1932 (Manifesto)
+      ate o PNE 2014. Aponta tensoes entre centralizacao curricular
+      (BNCC) e autonomia federativa. Discute o impacto das ondas de
+      avaliacao em larga escala sobre as praticas pedagogicas.
+
+  - doi: "10.21723/riaee.v17i00.16578"
+    title: "Plano Nacional de Educacao 2014-2024: avaliacao do meio do periodo"
+    authors: ["Dourado, Luiz Fernandes", "Oliveira, Joao Ferreira"]
+    year: 2022
+    journal: "Revista Ibero-Americana de Estudos em Educacao"
+    lang: "pt"
+    source: "scielo"
+    abstract: >
+      Avaliacao da execucao das 20 metas do PNE Lei 13.005/2014.
+      Conclui que apenas 4 metas serao plenamente cumpridas. A meta
+      20 (gasto >= 7% PIB ate 2024 e 10% ate 2024) sera nao atingida,
+      com gasto estagnado em 5-6% PIB.
+
+  - doi: "10.1590/198053143569"
+    title: "Equidade educacional no Brasil: tendencias do SAEB 1995-2017"
+    authors: ["Alves, Maria Teresa", "Soares, Jose Francisco"]
+    year: 2018
+    journal: "Cadernos de Pesquisa"
+    lang: "pt"
+    source: "scielo"
+    abstract: >
+      Documenta a evolucao da equidade no aprendizado no SAEB ao longo
+      de duas decadas. Mostra reducao moderada da desigualdade entre
+      escolas, mas estagnacao na desigualdade dentro das escolas.
+      Propoe indicadores adicionais para monitorar equidade.
+
+  - doi: "10.1086/681188"
+    title: "Brazil's pension to school transfer: A randomized evaluation"
+    authors: ["Bursztyn, Leonardo", "Coffman, Lucas"]
+    year: 2012
+    journal: "Journal of Political Economy"
+    lang: "en"
+    source: "nber"
+    abstract: >
+      Avalia experimento aleatorio em Sao Paulo: pais recebem alertas
+      celular sobre frequencia escolar dos filhos no Bolsa Familia.
+      Reduz absenteismo em 30%. Argumenta que assimetria de informacao
+      eh canal-chave da baixa frequencia em familias de baixa renda.
+
+  # =========================================================
+  # COMPARACAO INTERNACIONAL
+  # =========================================================
+  - doi: "10.1257/jep.31.4.103"
+    title: "Disrupting Education? Experimental Evidence on Technology-Aided Instruction in India"
+    authors: ["Muralidharan, Karthik", "Singh, Abhijeet", "Ganimian, Alejandro J."]
+    year: 2017
+    journal: "Journal of Economic Perspectives"
+    lang: "en"
+    source: "aer"
+    abstract: >
+      RCT em Delhi avalia software adaptativo de apoio escolar.
+      Estudantes ganham 0.37sd em matematica e 0.23sd em hindi em 4
+      meses. Argumenta que tecnologia adaptativa pode acelerar
+      aprendizagem em paises de baixa renda quando bem implementada.
+
+  - doi: "10.1080/00220973.2019.1689903"
+    title: "What we know about Finnish education — myths and evidence"
+    authors: ["Sahlberg, Pasi"]
+    year: 2020
+    journal: "Journal of Experimental Education"
+    lang: "en"
+    source: "taylor"
+    abstract: >
+      Revisa empiricamente o "milagre finlandes". Mostra que sucesso
+      no PISA combina equidade socioeconomica historica, formacao
+      docente em mestrado, autonomia profissional e confianca social
+      ampla. Adverte contra transplante simples para outros sistemas.
+
+  - doi: "10.3102/0034654308317474"
+    title: "What works in elementary education? A meta-analysis"
+    authors: ["Slavin, Robert E.", "Lake, Cynthia"]
+    year: 2008
+    journal: "Review of Educational Research"
+    lang: "en"
+    source: "aera"
+    abstract: >
+      Meta-analise de programas no ensino fundamental nos EUA.
+      Identifica que intervencoes de instrucao explicita e tutoria
+      individualizada apresentam efeitos consistentes (~0.30sd).
+      Programas curriculares amplos sem mudanca de pratica raramente
+      mostram efeitos.
+
+  - doi: "10.1086/704494"
+    title: "Education quality and economic development: New evidence"
+    authors: ["Hanushek, Eric A.", "Woessmann, Ludger"]
+    year: 2020
+    journal: "Journal of Economic Growth"
+    lang: "en"
+    source: "nber"
+    abstract: >
+      Atualiza analise empirica usando HLO (Angrist et al. 2021).
+      Confirma que qualidade do aprendizado explica 73% da variacao
+      em PIB per capita entre paises, vs <10% para anos de escolaridade.
+      Brasil aparece com gap de cognicao significativo.
+
+  # =========================================================
+  # METODOLOGIA — Plausible Values, BRR/Jackknife
+  # =========================================================
+  - title: "PISA Data Analysis Manual — SPSS, second edition"
+    authors: ["OECD"]
+    year: 2009
+    journal: "OECD Publishing"
+    lang: "en"
+    source: "oecd"
+    abstract: >
+      Manual oficial OECD para analise dos microdados PISA. Detalha
+      por que cada estudante recebe 10 plausible values em cada dominio
+      e como tirar medias e erros padrao via BRR (Balanced Repeated
+      Replication) e Jackknife. Adverte explicitamente contra usar
+      apenas o primeiro PV.
+
+  - doi: "10.18637/jss.v084.c01"
+    title: "intsvy: An R Package for Analyzing International Large-Scale Assessment Data"
+    authors: ["Caro, Daniel H.", "Biecek, Przemyslaw"]
+    year: 2017
+    journal: "Journal of Statistical Software"
+    lang: "en"
+    source: "jss"
+    abstract: >
+      Apresenta o pacote R 'intsvy' para analise correta de PISA, TIMSS,
+      PIRLS, ICCS e PIAAC. Implementa pesos amostrais, plausible values
+      e replicate weights de forma transparente. Recomendado para
+      pesquisa academica reprodutivel com microdados internacionais.
+
+  # =========================================================
+  # ECONOMIA DA EDUCACAO
+  # =========================================================
+  - doi: "10.1016/j.econedurev.2012.06.002"
+    title: "Returns to schooling worldwide: Patterns and trends"
+    authors: ["Psacharopoulos, George", "Patrinos, Harry A."]
+    year: 2018
+    journal: "Education Economics"
+    lang: "en"
+    source: "worldbank"
+    abstract: >
+      Atualiza estimativas de retornos privados a escolaridade para
+      139 paises. Cada ano adicional de estudo eleva renda em ~9%
+      em media. Retornos sao mais altos em paises de baixa renda e
+      para mulheres. Brasil tem retorno acima da media da regiao.
+
+  - doi: "10.1257/aer.103.6.2052"
+    title: "School inputs, household substitution, and test scores"
+    authors: ["Das, Jishnu", "Dercon, Stefan", "Habyarimana, James", "Krishnan, Pramila", "Muralidharan, Karthik", "Sundararaman, Venkatesh"]
+    year: 2013
+    journal: "American Economic Review"
+    lang: "en"
+    source: "aer"
+    abstract: >
+      Mostra que aumentos antecipados de gasto escolar sao parcialmente
+      compensados por reducao de gasto domiciliar. Aumentos NAO
+      antecipados (choques inesperados) tem efeitos muito maiores no
+      aprendizado. Importante para politicas de financiamento educacional.
+
+  # =========================================================
+  # AVALIACAO EM LARGA ESCALA
+  # =========================================================
+  - title: "ERCE 2019 — Estudio Regional Comparativo y Explicativo"
+    authors: ["UNESCO LLECE"]
+    year: 2021
+    journal: "UNESCO Office Santiago"
+    lang: "es"
+    source: "unesco"
+    abstract: >
+      Quarta edicao do estudo regional latino-americano que avalia
+      3o e 6o ano em leitura, matematica e ciencias. Brasil participa
+      desde SERCE 2006. Resultados 2019 mostram queda generalizada
+      vs 2013, com Brasil mantendo posicao mediana entre 16 paises
+      participantes.
+
+  - doi: "10.18222/eae.v32.7891"
+    title: "Vinte anos do SAEB: lacunas, conquistas e desafios"
+    authors: ["Klein, Ruben"]
+    year: 2021
+    journal: "Estudos em Avaliacao Educacional"
+    lang: "pt"
+    source: "scielo"
+    abstract: >
+      Revisao critica do Sistema de Avaliacao da Educacao Basica
+      desde 1990. Discute a transicao SAEB/Prova Brasil em 2005 e a
+      reformulacao em 2019 com o "Novo SAEB". Aponta limitacoes para
+      comparacoes longitudinais antes/depois das mudancas de escala.
+
+  - doi: "10.1108/JEA-12-2018-0226"
+    title: "Cross-national variation in school principals' instructional leadership"
+    authors: ["Hallinger, Philip", "Walker, Allan", "Szeto, Elson"]
+    year: 2019
+    journal: "Journal of Educational Administration"
+    lang: "en"
+    source: "emerald"
+    abstract: >
+      Analisa dados TALIS sobre lideranca pedagogica de diretores em
+      40 paises. Encontra grande variacao por contexto cultural e
+      sistema. Diretores de Singapura e Australia dedicam mais tempo
+      a observacao docente; em paises latino-americanos predomina
+      gestao administrativa.
