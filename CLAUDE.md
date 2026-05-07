@@ -1060,6 +1060,8 @@ Estas regras devem ser seguidas em TODA sessão:
 ## 📝 Changelog
 
 - **2026-04-23**: Versão inicial do CLAUDE.md. Arquitetura completa definida, roadmap de 6 fases, stack tecnológico confirmado.
+- **2026-04-30**: Fase 5 (Sistema de agentes CrewAI) concluída — 8 agentes em 4 crews (Core/Analysis/Synthesis/Master), 10 tools, RAG ChromaDB com 25 papers seed em `data/chromadb/edu_literature/`, CLI dev `python -m src.cli`. Decisões arquiteturais consolidadas em [`docs/adrs/0003-arquitetura-fastapi-crewai.md`](docs/adrs/0003-arquitetura-fastapi-crewai.md). 119 testes mock + 2 live opt-in.
+- **2026-05-06**: Fase 6 (Frontend Next.js 14) concluída — workspace 3 colunas (Sidebar + Workspace + ContextPanel) em `/compare`, `/explorer`, `/library`. Streaming SSE via `agents-server:8001` (mini FastAPI) + Plotly em chunk separado lazy + DOIs clicáveis. Stack: Next 14 + Tailwind 3.4 + shadcn/ui (cópia) + Zustand + TanStack Query + react-markdown + react-plotly.js. 86 testes (77 vitest + 9 Playwright). Caddy reverse proxy `:8443` para single origin em produção. Decisões em [`docs/adrs/0004-arquitetura-frontend-nextjs.md`](docs/adrs/0004-arquitetura-frontend-nextjs.md).
 
 ---
 
