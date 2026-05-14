@@ -92,6 +92,29 @@ services:
       postgres:
         condition: service_healthy
 
+  agents-server:
+    build:
+      context: ./agents
+      dockerfile: Dockerfile
+    container_name: edu_agents_server
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      AGENTS_GATEWAY_BASE_URL: http://api:8000
+      AGENTS_RAG_PERSIST_DIR: /data/chromadb/edu_literature
+      AGENTS_CORS_ORIGINS: ${AGENTS_CORS_ORIGINS:-http://localhost:3000}
+      OTEL_SDK_DISABLED: "true"
+      CREWAI_DISABLE_TELEMETRY: "true"
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./agents/src:/app/src
+      - ./data:/data
+    depends_on:
+      - api
+
   frontend:
     build:
       context: ./frontend
@@ -100,6 +123,7 @@ services:
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+      NEXT_PUBLIC_AGENTS_BASE_URL: ${NEXT_PUBLIC_AGENTS_BASE_URL:-http://localhost:8001}
       NEXT_TELEMETRY_DISABLED: "1"
     ports:
       - "3000:3000"
@@ -109,6 +133,7 @@ services:
       - /app/.next
     depends_on:
       - api
+      - agents-server
 
 volumes:
   postgres_data:
