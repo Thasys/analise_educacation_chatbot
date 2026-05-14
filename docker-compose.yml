@@ -101,7 +101,13 @@ services:
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # LLM provider-agnostico (Fase 5.x refactor). AGENTS_LLM_API_KEY tem
+      # precedencia; cai em ANTHROPIC_API_KEY (legado) se nao definido.
+      AGENTS_LLM_PROVIDER: ${AGENTS_LLM_PROVIDER:-anthropic}
+      AGENTS_LLM_API_KEY: ${AGENTS_LLM_API_KEY:-${ANTHROPIC_API_KEY:-}}
+      AGENTS_LLM_API_BASE: ${AGENTS_LLM_API_BASE:-}
+      AGENTS_LLM_SMART_MODEL: ${AGENTS_LLM_SMART_MODEL:-claude-sonnet-4-5}
+      AGENTS_LLM_FAST_MODEL: ${AGENTS_LLM_FAST_MODEL:-claude-haiku-4-5}
       AGENTS_GATEWAY_BASE_URL: http://api:8000
       AGENTS_RAG_PERSIST_DIR: /data/chromadb/edu_literature
       AGENTS_CORS_ORIGINS: ${AGENTS_CORS_ORIGINS:-http://localhost:3000}
@@ -114,6 +120,16 @@ services:
       - ./data:/data
     depends_on:
       - api
+    healthcheck:
+      # python:3.11-slim nao traz curl — usamos stdlib (urllib).
+      test:
+        - "CMD-SHELL"
+        - "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health',timeout=3).status==200 else 1)\""
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # CrewAI + torch + chromadb levam ~20-40s para importar no cold start.
+      start_period: 45s
 
   frontend:
     build:
@@ -132,8 +148,10 @@ services:
       - /app/node_modules
       - /app/.next
     depends_on:
-      - api
-      - agents-server
+      api:
+        condition: service_started
+      agents-server:
+        condition: service_healthy
 
 volumes:
   postgres_data:
