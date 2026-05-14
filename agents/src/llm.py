@@ -5,11 +5,14 @@ Centraliza a criacao de instancias `crewai.LLM` por papel (`fast` ou
 basta `monkeypatch.setattr` em `LLM.call` ou usar a fixture
 `mock_llm_call` do conftest.
 
-Mapeamento (ver `fase-5-analise.md` secao 3.2):
+Provider-agnostico: usa LiteLLM por baixo (transitivo da CrewAI), o que
+permite trocar de Anthropic Claude para OpenAI, Gemini, Groq, Ollama
+(local), vLLM ou OpenRouter apenas via `AGENTS_LLM_PROVIDER`.
 
-- `fast`  -> Haiku 4.5 (Orchestrator, Profiler, Retriever, Citation,
-   Visualizer)
-- `smart` -> Sonnet 4.5 (Statistician, Comparativist, Synthesizer)
+Mapeamento por papel (default Claude, ver `fase-5-analise.md` 3.2):
+
+- `fast`  -> modelo barato/rapido (Haiku 4.5, gpt-4o-mini, llama3.1:8b…)
+- `smart` -> modelo principal (Sonnet 4.5, gpt-4o, llama3.1:70b…)
 """
 
 from __future__ import annotations
@@ -25,33 +28,57 @@ from src.config import settings
 LLMRole = Literal["fast", "smart"]
 
 
-def _ensure_anthropic_env() -> None:
-    """Espelha settings.anthropic_api_key em ANTHROPIC_API_KEY do processo.
+# Variavel de ambiente esperada pelo LiteLLM/SDK nativo de cada provider.
+# Ollama nao requer chave (servidor local).
+_PROVIDER_ENV_VAR: dict[str, str | None] = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "gemini": "GEMINI_API_KEY",
+    "groq": "GROQ_API_KEY",
+    "openrouter": "OPENROUTER_API_KEY",
+    "ollama": None,
+}
 
-    A SDK nativa Anthropic usada pela CrewAI le de `os.environ` na criacao
-    do client. Se a chave estiver definida apenas via Pydantic Settings
-    (carregada do .env), precisamos exporta-la antes.
+
+def _ensure_provider_env() -> None:
+    """Espelha settings.llm_api_key na env var esperada pelo provider ativo.
+
+    A SDK nativa de cada provider (Anthropic, OpenAI, etc.) le da
+    `os.environ` na criacao do client. Se a chave estiver definida apenas
+    via Pydantic Settings (carregada do .env), precisamos exporta-la.
     """
-    if "ANTHROPIC_API_KEY" in os.environ and os.environ["ANTHROPIC_API_KEY"].strip():
+    provider = settings.llm_provider
+    env_var = _PROVIDER_ENV_VAR.get(provider)
+    if env_var is None:  # Ollama
         return
-    if settings.anthropic_api_key is None:
+    if env_var in os.environ and os.environ[env_var].strip():
         return
-    secret = settings.anthropic_api_key.get_secret_value().strip()
+    if settings.llm_api_key is None:
+        return
+    secret = settings.llm_api_key.get_secret_value().strip()
     if secret and not secret.startswith("sk-ant-..."):
-        os.environ["ANTHROPIC_API_KEY"] = secret
+        os.environ[env_var] = secret
+
+
+def _ensure_anthropic_env() -> None:
+    """Alias retrocompat: codigo/testes legado chamam essa funcao."""
+    _ensure_provider_env()
 
 
 def make_llm(role: LLMRole, *, temperature: float | None = None) -> LLM:
     """Constroi um `crewai.LLM` para o papel solicitado.
 
     Args:
-        role: 'fast' (Haiku 4.5) ou 'smart' (Sonnet 4.5).
+        role: 'fast' (modelo barato) ou 'smart' (modelo principal).
         temperature: override; se None, usa `settings.llm_temperature`.
     """
-    _ensure_anthropic_env()
+    _ensure_provider_env()
     model_id = settings.llm_for(role)
-    return LLM(
-        model=f"anthropic/{model_id}",
-        temperature=temperature if temperature is not None else settings.llm_temperature,
-        max_tokens=settings.llm_max_tokens,
-    )
+    kwargs: dict[str, object] = {
+        "model": f"{settings.llm_provider}/{model_id}",
+        "temperature": temperature if temperature is not None else settings.llm_temperature,
+        "max_tokens": settings.llm_max_tokens,
+    }
+    if settings.llm_api_base:
+        kwargs["api_base"] = settings.llm_api_base
+    return LLM(**kwargs)

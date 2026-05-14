@@ -59,11 +59,38 @@ class Settings(BaseSettings):
         validation_alias="AGENTS_GATEWAY_MAX_RETRIES",
     )
 
-    # ---- LLM (Anthropic) ---------------------------------------------
-    anthropic_api_key: SecretStr | None = Field(
+    # ---- LLM (provider-agnostico via LiteLLM) ------------------------
+    # Default mantem Anthropic Claude p/ retrocompatibilidade. Trocar
+    # `llm_provider` aciona automaticamente o provider correto no
+    # LiteLLM (anthropic/openai/gemini/groq/ollama/openrouter/...).
+    llm_provider: Literal[
+        "anthropic", "openai", "gemini", "groq", "ollama", "openrouter"
+    ] = Field(
+        default="anthropic",
+        validation_alias="AGENTS_LLM_PROVIDER",
+    )
+    llm_api_key: SecretStr | None = Field(
         default=None,
         validation_alias=AliasChoices(
-            "AGENTS_ANTHROPIC_API_KEY", "ANTHROPIC_API_KEY"
+            "AGENTS_LLM_API_KEY",
+            "AGENTS_ANTHROPIC_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "OPENAI_API_KEY",
+            "GEMINI_API_KEY",
+            "GROQ_API_KEY",
+            "OPENROUTER_API_KEY",
+        ),
+        description=(
+            "Chave da API do provider ativo. Ignorada para ollama. "
+            "Aliases dos providers comuns sao aceitos para conveniencia."
+        ),
+    )
+    llm_api_base: str | None = Field(
+        default=None,
+        validation_alias="AGENTS_LLM_API_BASE",
+        description=(
+            "Endpoint custom (ex.: http://localhost:11434 p/ Ollama, "
+            "http://localhost:8000/v1 p/ vLLM, ou proxy LLM corporativo)."
         ),
     )
     llm_smart_model: str = Field(
@@ -86,6 +113,11 @@ class Settings(BaseSettings):
         ge=64,
         le=16384,
     )
+
+    @property
+    def anthropic_api_key(self) -> SecretStr | None:
+        """Alias retrocompat: codigo legado le settings.anthropic_api_key."""
+        return self.llm_api_key if self.llm_provider == "anthropic" else None
 
     # ---- RAG (ChromaDB) ----------------------------------------------
     rag_persist_dir: Path = Field(
@@ -124,11 +156,23 @@ class Settings(BaseSettings):
 
     # ---- propriedades derivadas --------------------------------------
     @property
-    def has_anthropic_key(self) -> bool:
-        if self.anthropic_api_key is None:
+    def has_llm_key(self) -> bool:
+        """True se ha chave utilizavel para o provider ativo.
+
+        Ollama nao requer chave — sempre retorna True quando provider=ollama.
+        Demais providers exigem chave nao-vazia e nao-placeholder.
+        """
+        if self.llm_provider == "ollama":
+            return True
+        if self.llm_api_key is None:
             return False
-        secret = self.anthropic_api_key.get_secret_value().strip()
+        secret = self.llm_api_key.get_secret_value().strip()
         return bool(secret) and not secret.startswith("sk-ant-...")
+
+    @property
+    def has_anthropic_key(self) -> bool:
+        """Alias retrocompat de `has_llm_key` para provider anthropic."""
+        return self.llm_provider == "anthropic" and self.has_llm_key
 
     @property
     def has_langfuse(self) -> bool:

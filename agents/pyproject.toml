@@ -20,13 +20,35 @@ dependencies = [
 [project.optional-dependencies]
 # Stack pesado dos agentes — instalavel sob demanda nas Sprints 5.1+.
 # Sprint 5.0 fica leve para CI/test de scaffold.
+#
+# LLM provider-agnostico: CrewAI usa LiteLLM internamente, que ja fala com
+# Anthropic, OpenAI, Gemini, Groq, OpenRouter e Ollama. As SDKs nativas sao
+# opcionais — instale `[agents-<provider>]` apenas se for usar esse provider.
 agents = [
     "crewai>=0.80",
-    "anthropic>=0.34",
-    "langchain-anthropic>=0.2",
     # Mini API server para o endpoint /api/chat/stream (Sprint 6.1).
     # uvicorn ja vem como transitivo de crewai.
     "fastapi>=0.110",
+]
+# Default historico do projeto: Anthropic Claude.
+agents-anthropic = [
+    "anthropic>=0.34",
+    "langchain-anthropic>=0.2",
+]
+agents-openai = [
+    "openai>=1.40",
+]
+agents-gemini = [
+    "google-generativeai>=0.7",
+]
+# Ollama nao precisa de SDK extra — LiteLLM fala HTTP direto.
+agents-ollama = []
+# Groq e OpenRouter usam o SDK da OpenAI sob o capo.
+agents-groq = [
+    "openai>=1.40",
+]
+agents-openrouter = [
+    "openai>=1.40",
 ]
 rag = [
     "chromadb>=0.5",

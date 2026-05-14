@@ -45,7 +45,7 @@ def _stub_final() -> FinalAnswer:
 
 
 def _patch_has_key_true(monkeypatch):
-    """Substitui `Settings.has_anthropic_key` por property -> True.
+    """Substitui `Settings.has_llm_key` por property -> True.
 
     Ataca a CLASSE para nao depender do estado global do settings ja
     instanciado (lru_cache + env var loaded em import time)."""
@@ -53,7 +53,7 @@ def _patch_has_key_true(monkeypatch):
 
     monkeypatch.setattr(
         type(cli.settings),
-        "has_anthropic_key",
+        "has_llm_key",
         property(lambda self: True),
     )
 
@@ -63,7 +63,7 @@ def _patch_has_key_false(monkeypatch):
 
     monkeypatch.setattr(
         type(cli.settings),
-        "has_anthropic_key",
+        "has_llm_key",
         property(lambda self: False),
     )
 

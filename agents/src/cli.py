@@ -104,10 +104,10 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     configure_logging()
 
-    if not settings.has_anthropic_key:
+    if not settings.has_llm_key:
         print(
-            "ERRO: ANTHROPIC_API_KEY ausente ou placeholder. Configure no .env "
-            "antes de rodar o master_flow.",
+            f"ERRO: chave do provider LLM ausente (AGENTS_LLM_PROVIDER={settings.llm_provider}). "
+            "Configure AGENTS_LLM_API_KEY no .env antes de rodar o master_flow.",
             file=sys.stderr,
         )
         return 1
