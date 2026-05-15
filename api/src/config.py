@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     # API_DUCKDB_PATH=/data/duckdb/education.duckdb.
     duckdb_path: Path = Field(
         default=Path("../data/duckdb/education.duckdb"),
-        validation_alias="API_DUCKDB_PATH",
+        validation_alias=AliasChoices("API_DUCKDB_PATH", "DUCKDB_PATH"),
     )
     duckdb_memory_limit: str = Field(
         default="4GB",

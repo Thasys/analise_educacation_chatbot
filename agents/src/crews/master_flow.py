@@ -2,17 +2,18 @@
 
 Roteia por `IntentDecision.flow`:
 
-- simple: Core -> Comparativist (com RAG) -> Citation -> Synthesis
+- `simple`: Core -> Comparativist (com RAG) -> Citation -> Synthesis
   (pula Retriever/Statistician — perguntas conceituais).
-- data:   Core -> Analysis completo -> Synthesis (caminho default).
-- deep:   idem data, com max_iter maior nos agentes (futuro);
-  Sprint 5.6 trata como `data`.
+- `data`:   Core -> Analysis completo -> Synthesis (caminho default).
+- `deep`:   idem `data`, com `max_iter` maior nos agentes (planejado);
+  hoje tratado igual a `data`.
 
 Saida final: `FinalAnswer` com `citations` populadas a partir das
-Citations do Citation Agent.
+Citations do Citation Agent + Fact Checker (ADR 0007).
 
-Sprint 6.1: aceita callback opcional `on_event` para emitir progresso
-em tempo real (consumido pelo endpoint /api/chat/stream do gateway).
+Callback `on_event` opcional emite progresso em tempo real (cada
+agente vira um par `agent_started`/`agent_done`). Consumido pelo
+endpoint /api/chat/stream do gateway (SSE).
 """
 
 from __future__ import annotations
@@ -31,8 +32,12 @@ from src.crews.analysis_crew import (
     _run_retriever,
     _run_statistician,
 )
+from src.crews._helpers import run_fact_check
 from src.crews.core_crew import run_core_flow
-from src.crews.synthesis_crew import run_synthesis_flow
+from src.crews.synthesis_crew import (
+    regenerate_final_after_fact_check,
+    run_synthesis_flow,
+)
 from src.rag.client import RagClient
 from src.schemas import (
     CoreFlowOutput,
@@ -45,8 +50,8 @@ from src.schemas import (
 log = structlog.get_logger(__name__)
 
 
-# Tipo do callback de evento (Sprint 6.1).
-# Cada evento e um dict serializavel JSON com pelo menos `type` e `ts`.
+# Tipo do callback de evento. Cada evento e um dict serializavel JSON
+# com pelo menos `type` e `ts`. Consumido pelo SSE no agents-server.
 EventCallback = Callable[[dict[str, Any]], None]
 
 
@@ -110,7 +115,7 @@ def run_master(
         on_event: callback opcional invocado a cada etapa do pipeline.
             Cada evento e um dict com `type` (agent_started, agent_done,
             final_answer, error) e `ts` (epoch float). Outros campos
-            dependem do tipo. Sprint 6.1 usa para emitir SSE.
+            dependem do tipo. Usado pelo endpoint /api/chat/stream.
 
     Returns:
         FinalAnswer com markdown + visualizations + citations + warnings.
@@ -169,6 +174,8 @@ def run_master(
                 "type": "agent_done",
                 "agent": "Retriever",
                 "tool_calls": len(retrieved.tool_calls),
+                "primary_data_rows": len(retrieved.primary_data or []),
+                "primary_meta_keys": list((retrieved.primary_meta or {}).keys())[:8],
             },
         )
 
@@ -207,7 +214,70 @@ def run_master(
         },
     )
 
-    # 4. Acoplar citations no FinalAnswer
+    # 4. Fact-check (MP4 do quality-assessment 2026-05-14).
+    # Validacao deterministica: extrai numeros do markdown e cruza com
+    # `retrieved.primary_data` + `primary_meta`. Se >20% divergentes,
+    # regenera o Synthesizer 1x com lista de divergencias. Se ainda
+    # falhar, marca warning visivel.
+    _emit(on_event, {"type": "agent_started", "agent": "Fact Checker"})
+    is_consistent, divergences = run_fact_check(final.markdown, retrieved)
+    if not is_consistent and divergences:
+        log.warning(
+            "agents.master_flow.fact_check_failed",
+            divergences=divergences[:10],
+            attempt=1,
+        )
+        _emit(
+            on_event,
+            {
+                "type": "agent_done",
+                "agent": "Fact Checker",
+                "is_consistent": False,
+                "divergences": divergences[:10],
+                "action": "retry_synthesizer",
+            },
+        )
+        # Retry: regenera apenas o Synthesizer com divergencias no prompt.
+        _emit(on_event, {"type": "agent_started", "agent": "Synthesizer (retry)"})
+        try:
+            final = regenerate_final_after_fact_check(
+                core, retrieved, stats, context,
+                divergences=divergences,
+                previous_markdown=final.markdown,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.exception("agents.master_flow.synth_retry_failed")
+            _emit(
+                on_event,
+                {"type": "agent_done", "agent": "Synthesizer (retry)", "error": str(exc)},
+            )
+        else:
+            _emit(on_event, {"type": "agent_done", "agent": "Synthesizer (retry)"})
+            # Recheck — se ainda inconsistente, adiciona warning.
+            is_consistent, divergences = run_fact_check(final.markdown, retrieved)
+            if not is_consistent and divergences:
+                final.warnings = list(final.warnings) + [
+                    f"Fact-check: {len(divergences)} valores no markdown nao "
+                    f"correspondem ao dado real (tolerancia 5%). "
+                    f"Divergentes: {', '.join(f'{n:g}' for n in divergences[:5])}. "
+                    "Trate como ilustrativo, nao final."
+                ]
+                log.warning(
+                    "agents.master_flow.fact_check_failed_after_retry",
+                    divergences=divergences[:10],
+                )
+    else:
+        _emit(
+            on_event,
+            {
+                "type": "agent_done",
+                "agent": "Fact Checker",
+                "is_consistent": True,
+                "divergences": [],
+            },
+        )
+
+    # 5. Acoplar citations no FinalAnswer
     final.citations = citations.items
 
     elapsed_s = time.perf_counter() - started

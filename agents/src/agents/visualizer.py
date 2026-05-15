@@ -9,23 +9,20 @@ from __future__ import annotations
 
 from crewai import Agent
 
-from src.agents._prompt_loader import load_prompt
-from src.llm import make_llm
+from src.agents._builder import make_agent
 from src.tools.viz_tools import MakePlotlySpecTool
 
 
 def build_visualizer() -> Agent:
-    return Agent(
+    return make_agent(
         role="Especialista em visualizacao de dados educacionais",
         goal=(
             "Gerar especificacao Plotly (chart_type + figure dict + "
             "metadados) coerente com o tipo de pergunta, destacando o "
             "Brasil quando aplicavel."
         ),
-        backstory=load_prompt("visualizer_system"),
-        llm=make_llm("fast"),
+        prompt_name="visualizer_system",
+        llm_kind="fast",
         tools=[MakePlotlySpecTool()],
-        allow_delegation=False,
-        verbose=False,
         max_iter=3,
     )

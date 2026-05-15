@@ -1,20 +1,20 @@
-"""Comparative Education Agent — narrativa BR x Internacional.
+"""Agente que produz narrativa BR x Internacional fundamentada.
 
-LLM: Sonnet 4.5 (sintese contextual). Recebe RetrievedData +
-StatAnalysis e produz ComparativeContext com narrativa, achados-chave,
-contexto historico e ressalvas metodologicas.
+Recebe `RetrievedData` + `StatAnalysis` e produz `ComparativeContext`
+(narrativa, achados-chave, contexto historico, caveats metodologicos).
 
-Sprint 5.5: ganhou `RAGSearchTool` para fundamentar afirmacoes em
-literatura cientifica. Continua produzindo apenas ComparativeContext
-(sem DOIs no output) — citacao formal eh tarefa do Citation Agent.
+Por que aqui (e nao no Synthesizer): a narrativa precisa de RAG para
+ancorar em literatura. Separar permite mockar RAG so neste agente.
+
+Por que SEM DOIs no output: citacao formal e responsabilidade do
+Citation Agent (single source of truth para DOIs).
 """
 
 from __future__ import annotations
 
 from crewai import Agent
 
-from src.agents._prompt_loader import load_prompt
-from src.llm import make_llm
+from src.agents._builder import make_agent
 from src.rag.client import RagClient
 from src.tools.rag_tools import RAGSearchTool, build_rag_tools
 
@@ -30,7 +30,7 @@ def build_comparativist(client: RagClient | None = None) -> Agent:
         # Sincroniza override com a tool wrapper.
         RAGSearchTool._client_override = client
     rag_tools = [t for t in build_rag_tools(client=client) if isinstance(t, RAGSearchTool)]
-    return Agent(
+    return make_agent(
         role="Especialista em educacao comparada Brasil-Internacional",
         goal=(
             "Construir narrativa fundamentada nos dados sobre como o "
@@ -39,10 +39,8 @@ def build_comparativist(client: RagClient | None = None) -> Agent:
             "e ressalvas metodologicas explicitas, ancorada em literatura "
             "cientifica via RAG."
         ),
-        backstory=load_prompt("comparativist_system"),
-        llm=make_llm("smart"),
+        prompt_name="comparativist_system",
+        llm_kind="smart",
         tools=rag_tools,
-        allow_delegation=False,
-        verbose=False,
         max_iter=4,
     )

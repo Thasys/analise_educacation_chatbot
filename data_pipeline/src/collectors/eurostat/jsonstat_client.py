@@ -51,6 +51,7 @@ import pandas as pd
 from src.collectors.base import BaseCollector
 from src.config import settings
 from src.logging_config import get_logger
+from src.utils.period import format_eurostat_period_params, parse_period
 
 log = get_logger(__name__)
 
@@ -119,19 +120,9 @@ class EurostatCollector(BaseCollector):
 
     @staticmethod
     def _period_params(period: str | int | None) -> list[tuple[str, int]]:
-        if period is None:
-            return []
-        text = str(period).strip()
-        if not text or text.lower() == "all":
-            return []
-        if "-" in text:
-            start, end = text.split("-", 1)
-            return [
-                ("sinceTimePeriod", int(start)),
-                ("untilTimePeriod", int(end)),
-            ]
-        year = int(text)
-        return [("time", year)]
+        # Delegacao para o utilitario compartilhado (DRY #8). Mantemos
+        # o metodo como adaptador para preservar API publica/teste.
+        return format_eurostat_period_params(parse_period(period))
 
     # ------------------------------------------------------------------
     # Fetch
@@ -143,16 +134,8 @@ class EurostatCollector(BaseCollector):
         **kwargs: Any,
     ) -> tuple[pd.DataFrame, str]:
         url = self.build_url(reference_period)
-        client = self._http_client or httpx.Client(timeout=settings.http_timeout_seconds)
-        try:
-            log.info("eurostat.fetch", url=url, dataset=self.dataset_code)
-            response = client.get(url, headers={"Accept": "application/json"})
-            response.raise_for_status()
-            payload = response.json()
-        finally:
-            if self._http_client is None:
-                client.close()
-
+        log.info("eurostat.fetch", url=url, dataset=self.dataset_code)
+        payload = self._http_fetch_json(url, http_client=self._http_client)
         df = self.parse_jsonstat(payload)
         log.info(
             "eurostat.fetch.parsed",

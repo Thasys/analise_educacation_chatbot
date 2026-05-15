@@ -43,6 +43,7 @@ import pandas as pd
 from src.collectors.base import BaseCollector
 from src.config import settings
 from src.logging_config import get_logger
+from src.utils.period import parse_period
 
 log = get_logger(__name__)
 
@@ -121,18 +122,10 @@ class CepalstatCollector(BaseCollector):
             + urlencode([("format", "json"), ("lang", "en")])
         )
 
-    @staticmethod
-    def _period_bounds(period: str | int | None) -> tuple[int | None, int | None]:
-        if period is None:
-            return None, None
-        text = str(period).strip()
-        if not text or text.lower() == "all":
-            return None, None
-        if "-" in text:
-            start, end = text.split("-", 1)
-            return int(start), int(end)
-        year = int(text)
-        return year, year
+    # `_period_bounds` foi promovida para `src.utils.period.parse_period`
+    # como parte do DRY pass (#8). Mantido aqui como alias de compat para
+    # a chamada interna em `_parse_payload`.
+    _period_bounds = staticmethod(parse_period)
 
     # ------------------------------------------------------------------
     # Fetch
@@ -143,21 +136,21 @@ class CepalstatCollector(BaseCollector):
         reference_period: str | int,
         **kwargs: Any,
     ) -> tuple[pd.DataFrame, str]:
+        # CEPALSTAT precisa de 2 GETs (data + dimensoes). Para nao
+        # duplicar a logica de Client lifecycle, usamos um httpx.Client
+        # explicito quando nenhum foi injetado — o helper
+        # `_http_fetch_json` da base cuidaria do ciclo de vida apenas se
+        # fizessemos 1 chamada.
+        owned_client = self._http_client is None
         client = self._http_client or httpx.Client(timeout=settings.http_timeout_seconds)
         try:
             data_url = self.build_url(reference_period)
             dims_url = self.build_dimensions_url()
             log.info("cepalstat.fetch", url=data_url, indicator=self.indicator_id)
-
-            data_resp = client.get(data_url, headers={"Accept": "application/json"})
-            data_resp.raise_for_status()
-            data_payload = data_resp.json()
-
-            dims_resp = client.get(dims_url, headers={"Accept": "application/json"})
-            dims_resp.raise_for_status()
-            dims_payload = dims_resp.json()
+            data_payload = self._http_fetch_json(data_url, http_client=client)
+            dims_payload = self._http_fetch_json(dims_url, http_client=client)
         finally:
-            if self._http_client is None:
+            if owned_client:
                 client.close()
 
         df = self._parse_payload(

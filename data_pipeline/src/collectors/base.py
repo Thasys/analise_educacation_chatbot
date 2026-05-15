@@ -6,13 +6,21 @@ Todo coletor da camada Bronze:
   3. A `collect()` da base cuida de escrever na Bronze e logar a execução.
 
 Subclasses só precisam implementar `fetch()` e declarar `source` e `dataset`.
+
+Atualizado 2026-05-14 (#7 do DRY pass): a base ganhou
+`_http_fetch_json(url)` e `_http_fetch_paginated(...)` para encapsular o
+ciclo de vida do `httpx.Client` + logging consistente que estava
+duplicado em 7 coletores REST. Subclasses HTTP devem usar esses metodos
+em vez de gerenciar `httpx.Client` manualmente.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import Any, ClassVar
 
+import httpx
 import pandas as pd
 
 from src.config import settings
@@ -144,3 +152,87 @@ class BaseCollector(ABC):
                 f"Coletor {type(self).__name__} não definiu `dataset`."
             )
         return ds
+
+    # ------------------------------------------------------------------
+    # Helpers HTTP compartilhados (#7 do DRY pass)
+    # ------------------------------------------------------------------
+    def _http_fetch_json(
+        self,
+        url: str,
+        *,
+        accept: str = "application/json",
+        http_client: httpx.Client | None = None,
+    ) -> Any:
+        """GET de uma URL, decodificando JSON com gestao de Client.
+
+        Encapsula o `httpx.Client` + try/finally + raise_for_status que
+        estava duplicado em 7 coletores REST. Cuidados:
+
+        - Se `http_client` for passado (caso tipico em testes com
+          `MockTransport`), nao fechamos o client — quem injetou cuida do
+          ciclo de vida.
+        - Caso contrario, criamos um Client com timeout das settings e
+          fechamos no final.
+        - O `Accept` default e JSON, mas pode ser sobrescrito (ex.: OECD
+          quer `application/vnd.sdmx.data+json;version=2.0.0`).
+        """
+        client = http_client or httpx.Client(timeout=settings.http_timeout_seconds)
+        try:
+            response = client.get(url, headers={"Accept": accept})
+            response.raise_for_status()
+            return response.json()
+        finally:
+            if http_client is None:
+                client.close()
+
+    def _http_fetch_paginated(
+        self,
+        first_url: str,
+        *,
+        next_link_fn: Callable[[Any], str | None],
+        records_fn: Callable[[Any, str], list[dict[str, Any]]],
+        accept: str = "application/json",
+        http_client: httpx.Client | None = None,
+        max_pages: int = 200,
+        log_event: str = "http.fetch_paginated",
+    ) -> list[dict[str, Any]]:
+        """Acumula registros seguindo `nextLink` ate `max_pages`.
+
+        Args:
+            first_url: URL da primeira pagina.
+            next_link_fn: dado um payload, devolve a URL da proxima pagina
+                ou None quando acabou.
+            records_fn: dado um payload e a URL atual, devolve a lista de
+                registros da pagina (levanta ValueError se payload mal-formado).
+            accept: header Accept.
+            http_client: client injetado (testes); None cria um novo.
+            max_pages: cap de seguranca contra loops infinitos.
+            log_event: nome do evento de log por iteracao.
+
+        Generalizacao do padrao em `WorldBankCollector._fetch_paginated`
+        e `IpeaDataCollector._fetch_paginated`.
+        """
+        client = http_client or httpx.Client(timeout=settings.http_timeout_seconds)
+        try:
+            url: str | None = first_url
+            records: list[dict[str, Any]] = []
+            page = 0
+            while url:
+                page += 1
+                log.info(log_event, url=url, page=page)
+                response = client.get(url, headers={"Accept": accept})
+                response.raise_for_status()
+                payload = response.json()
+                records.extend(records_fn(payload, url))
+                url = next_link_fn(payload)
+                if page >= max_pages:
+                    log.warning(
+                        f"{log_event}.cap_hit",
+                        pages=page,
+                        max_pages=max_pages,
+                    )
+                    break
+            return records
+        finally:
+            if http_client is None:
+                client.close()

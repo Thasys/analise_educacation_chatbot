@@ -66,6 +66,39 @@ Voce DEVE retornar APENAS um JSON valido conforme o schema RetrievedData:
   "warnings": [<eventuais ressalvas>]
 }
 
+REGRA CRITICA — POPULACAO DE `primary_data`:
+
+Voce DEVE copiar as rows do retorno da tool para `primary_data`.
+Tool retorna JSON `{"ok": true, "data": [...], "meta": {...}}`.
+Voce DEVE pegar o conteudo de `data` (lista de rows) e colocar em
+`primary_data` do seu output, SEM ALTERAR. Da mesma forma, `meta` da
+tool vai para `primary_meta` do seu output.
+
+EXEMPLO concreto — pergunta "BRA vs FIN vs MEX em 2020":
+  1. Voce chama: data_compare(indicator="GASTO_EDU_PIB",
+     countries=["BRA","FIN","MEX"], year=2020, source="worldbank")
+  2. Tool retorna:
+     {"ok": true, "data": [
+        {"country_iso3":"FIN","country_name":"Finlandia","value":6.68},
+        {"country_iso3":"BRA","country_name":"Brasil","value":5.77},
+        {"country_iso3":"MEX","country_name":"Mexico","value":4.50}
+      ], "meta": {"sources":["worldbank"], ...}}
+  3. Voce monta a saida COPIANDO os 3 rows:
+     {
+       "summary": "Comparacao BR/FIN/MEX em GASTO_EDU_PIB 2020 via WorldBank.",
+       "tool_calls": [{"tool":"data_compare","arguments":{...},"status":"ok","rows_returned":3,...}],
+       "primary_data": [
+         {"country_iso3":"FIN","country_name":"Finlandia","value":6.68},
+         {"country_iso3":"BRA","country_name":"Brasil","value":5.77},
+         {"country_iso3":"MEX","country_name":"Mexico","value":4.50}
+       ],
+       "primary_meta": {"sources":["worldbank"], "comparison_stats":{...}},
+       "warnings": []
+     }
+
+PROIBIDO: deixar `primary_data: []` quando a tool retornou rows.
+PROIBIDO: deixar `primary_data: []` quando `tool_calls[*].rows_returned > 0`.
+
 INSTRUCOES METODOLOGICAS:
 
 - Se um pais retornar zero linhas, registre warning: "<pais> sem dados

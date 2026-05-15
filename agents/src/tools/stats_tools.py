@@ -17,8 +17,9 @@ import math
 import statistics
 from typing import Any, ClassVar
 
-from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
+
+from src.tools._base import SafeTool
 
 
 # ----------------------------------------------------------------------
@@ -114,7 +115,7 @@ class ComputeStatsArgs(BaseModel):
     """Argumentos da ComputeStatsTool."""
 
     values: list[float] = Field(
-        ..., min_length=1, description="Lista de valores numericos do conjunto."
+        ..., description="Lista de valores numericos do conjunto (nao vazia)."
     )
     focus_value: float | None = Field(
         default=None,
@@ -129,7 +130,7 @@ class ComputeStatsArgs(BaseModel):
     )
 
 
-class ComputeStatsTool(BaseTool):
+class ComputeStatsTool(SafeTool):
     """Calcula estatisticas descritivas e posicionamento de um valor."""
 
     name: str = "compute_stats"
@@ -145,22 +146,14 @@ class ComputeStatsTool(BaseTool):
     # ClassVar para uniformidade com data_tools (nao usado aqui mas reservado).
     _client_override: ClassVar[None] = None
 
-    def run(self, *args: Any, **kwargs: Any) -> Any:
-        """Override para capturar ValueError da validacao (mesmo padrao
-        de _SafeDataTool)."""
-        try:
-            return super().run(*args, **kwargs)
-        except ValueError as exc:
-            return json.dumps(
-                {"ok": False, "error": {"error_type": "validation", "message": str(exc)}}
-            )
-
     def _run(
         self,
         values: list[float],
         focus_value: float | None = None,
         higher_is_better: bool = True,
     ) -> str:
+        if not values:
+            raise ValueError("values precisa de pelo menos 1 elemento.")
         result: dict[str, Any] = {
             "ok": True,
             "summary": compute_summary_stats(values),

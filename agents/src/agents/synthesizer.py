@@ -8,12 +8,11 @@ from __future__ import annotations
 
 from crewai import Agent
 
-from src.agents._prompt_loader import load_prompt
-from src.llm import make_llm
+from src.agents._builder import make_agent
 
 
 def build_synthesizer() -> Agent:
-    return Agent(
+    return make_agent(
         role="Sintetizador de respostas educacionais comparadas",
         goal=(
             "Produzir resposta final em markdown adaptada ao perfil "
@@ -21,9 +20,7 @@ def build_synthesizer() -> Agent:
             "narrativa, visualizacao e fontes — sem inventar numeros nem "
             "prescrever politicas."
         ),
-        backstory=load_prompt("synthesizer_system"),
-        llm=make_llm("smart"),
-        allow_delegation=False,
-        verbose=False,
+        prompt_name="synthesizer_system",
+        llm_kind="smart",
         max_iter=3,
     )

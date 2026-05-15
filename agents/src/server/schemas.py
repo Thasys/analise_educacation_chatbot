@@ -16,9 +16,9 @@ class ChatStreamRequest(BaseModel):
     profile_hint: ProfileKind | None = Field(
         default=None,
         description=(
-            "Perfil sugerido pelo frontend. NAO sobrescreve a deteccao "
-            "automatica do Orchestrator (Sprint 6.1 ignora; Sprint 6.4+ "
-            "pode usar como hint para casos ambiguos)."
+            "Perfil sugerido pelo frontend. Hoje NAO sobrescreve a "
+            "deteccao automatica do Orchestrator — reservado para uso "
+            "futuro em casos ambiguos."
         ),
     )
 

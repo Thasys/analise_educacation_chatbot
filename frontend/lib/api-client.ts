@@ -1,8 +1,9 @@
 /**
  * Cliente HTTP do frontend para o gateway FastAPI.
  *
- * Sprint 6.0: helpers para `fetch` com base URL e tratamento de erros.
- * Sprint 6.1 adiciona o parser SSE para `/api/chat/stream`.
+ * Helpers `apiGet` / `apiPost` para REST sincrono. O parser SSE para
+ * `/api/chat/stream` vive em `lib/streaming.ts` (separado para tree-
+ * shaking).
  */
 
 const DEFAULT_BASE_URL = 'http://localhost:8000';

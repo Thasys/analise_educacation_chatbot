@@ -7,6 +7,7 @@ ficam marcados com `@pytest.mark.live` e so rodam com `-m live`.
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable
 from typing import Any
 
@@ -19,6 +20,44 @@ def pytest_configure(config: pytest.Config) -> None:
         "markers",
         "live: testes E2E que requerem ANTHROPIC_API_KEY e gateway up. Skip por default.",
     )
+
+
+@pytest.fixture(autouse=True)
+def _force_anthropic_provider_for_tests(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Tests de agentes/tools assumem provider=anthropic (mock_llm_call patcheia AnthropicCompletion).
+
+    Em desenvolvimento o .env pode estar com provider=ollama (rodando local)
+    e modelos locais como `mistral-nemo:12b`. Aqui forcamos um par
+    provider+modelos que o CrewAI aceita nativamente; o mock_llm_call
+    intercepta antes de qualquer chamada real, entao a chave nunca eh usada.
+
+    NAO aplicamos override em `tests/test_config.py`, `tests/test_llm.py`,
+    `tests/test_cli.py` etc., porque esses testes validam justamente o
+    comportamento do provider (Ollama, etc.) e configuram o env eles mesmos.
+    """
+    # Limita a aplicar override apenas em testes que precisam do mock.
+    path = str(request.node.fspath).replace("\\", "/")
+    if "/tests/agents/" not in path and "/tests/tools/" not in path:
+        return
+    monkeypatch.setenv("AGENTS_LLM_PROVIDER", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-noop")
+    monkeypatch.setenv("AGENTS_LLM_SMART_MODEL", "claude-sonnet-4-6")
+    monkeypatch.setenv("AGENTS_LLM_FAST_MODEL", "claude-haiku-4-5-20251001")
+    monkeypatch.setenv("AGENTS_LLM_API_BASE", "")
+    # Settings ja foi importado antes da fixture; precisamos sobrescrever
+    # o singleton para que `make_llm` leia os valores corretos.
+    from src import config
+
+    monkeypatch.setattr(config.settings, "llm_provider", "anthropic", raising=False)
+    monkeypatch.setattr(
+        config.settings, "llm_smart_model", "claude-sonnet-4-6", raising=False
+    )
+    monkeypatch.setattr(
+        config.settings, "llm_fast_model", "claude-haiku-4-5-20251001", raising=False
+    )
+    monkeypatch.setattr(config.settings, "llm_api_base", None, raising=False)
 
 
 # ----------------------------------------------------------------------

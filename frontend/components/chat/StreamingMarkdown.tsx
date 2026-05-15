@@ -12,9 +12,9 @@ interface StreamingMarkdownProps {
 /**
  * Wrapper de ReactMarkdown com remark-gfm + classes Tailwind.
  *
- * Renderiza markdown progressivo durante o streaming. Sprint 6.2 nao
- * implementa partial_markdown event ainda — a UI mostra a `content`
- * completa do FinalAnswer quando chega.
+ * Renderiza markdown progressivo durante o streaming. Hoje a UI
+ * mostra a `content` completa do FinalAnswer quando chega — partial
+ * markdown via eventos SSE intermediarios e uso futuro.
  */
 export function StreamingMarkdown({ content, className }: StreamingMarkdownProps) {
   return (

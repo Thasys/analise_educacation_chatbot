@@ -11,12 +11,11 @@ sao independentes mas executadas em ordem para respeitar latencia.
 
 from __future__ import annotations
 
-import json
-
 import structlog
 from crewai import Crew, Process, Task
 
 from src.agents import build_orchestrator, build_profiler
+from src.crews._helpers import coerce_output
 from src.schemas import (
     CoreFlowOutput,
     EntityExtraction,
@@ -77,30 +76,10 @@ def build_core_crew(question: str) -> Crew:
     )
 
 
-def _coerce_intent(raw: object) -> IntentDecision:
-    if isinstance(raw, IntentDecision):
-        return raw
-    if isinstance(raw, dict):
-        return IntentDecision.model_validate(raw)
-    if isinstance(raw, str):
-        return IntentDecision.model_validate(json.loads(raw))
-    raise TypeError(f"Saida do Orchestrator inesperada: {type(raw).__name__}")
-
-
-def _coerce_entities(raw: object) -> EntityExtraction:
-    if isinstance(raw, EntityExtraction):
-        return raw
-    if isinstance(raw, dict):
-        return EntityExtraction.model_validate(raw)
-    if isinstance(raw, str):
-        return EntityExtraction.model_validate(json.loads(raw))
-    raise TypeError(f"Saida do Profiler inesperada: {type(raw).__name__}")
-
-
 def run_core_flow(question: str) -> CoreFlowOutput:
     """Executa a Core Crew sobre a pergunta e devolve outputs tipados.
 
-    Esta funcao e o ponto de entrada do master flow (Sprint 5.6). Tests
+    Esta funcao e o ponto de entrada do master flow. Tests
     podem patchear `Crew.kickoff` para devolver respostas determinadas.
     """
     log.info("agents.core_crew.start", question=question[:160])
@@ -108,8 +87,8 @@ def run_core_flow(question: str) -> CoreFlowOutput:
     crew.kickoff()
     intent_raw = crew.tasks[0].output.pydantic or crew.tasks[0].output.raw
     entities_raw = crew.tasks[1].output.pydantic or crew.tasks[1].output.raw
-    intent = _coerce_intent(intent_raw)
-    entities = _coerce_entities(entities_raw)
+    intent = coerce_output(IntentDecision, intent_raw)
+    entities = coerce_output(EntityExtraction, entities_raw)
     log.info(
         "agents.core_crew.done",
         flow=intent.flow,

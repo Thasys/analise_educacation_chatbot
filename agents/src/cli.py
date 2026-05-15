@@ -2,8 +2,8 @@
 
 Ponto de entrada simples para validar o master_flow fora do frontend.
 Imprime o markdown da resposta + sumario JSON de visualizacoes,
-citacoes, fontes e warnings. Util para debugging local e para a suite
-live (Sprint 5.6).
+citacoes, fontes e warnings. Util para debugging local e para testes
+live com Ollama/Anthropic.
 
 Uso:
 

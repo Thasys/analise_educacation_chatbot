@@ -4,6 +4,8 @@ import { useChatStore } from '@/lib/stores/chatStore';
 import { useProfileStore } from '@/lib/stores/profileStore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles } from 'lucide-react';
+import { DoiLink } from '@/components/citations/DoiLink';
+import { formatCitationMeta } from '@/lib/utils/citation';
 
 export function ContextPanel() {
   const messages = useChatStore((s) => s.messages);
@@ -62,19 +64,9 @@ export function ContextPanel() {
               <div key={c.doi ?? `${c.title}-${i}`} className="border-l-2 border-primary/40 pl-2">
                 <p className="text-xs font-medium leading-snug text-foreground">{c.title}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {c.authors[0] ?? 'Autor'} {c.authors.length > 1 ? 'et al.' : ''}
-                  {c.year ? ` (${c.year})` : ''}
+                  {formatCitationMeta(c, { mode: 'short' })}
                 </p>
-                {c.doi ? (
-                  <a
-                    href={`https://doi.org/${c.doi}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[10px] text-primary hover:underline"
-                  >
-                    doi.org/{c.doi}
-                  </a>
-                ) : null}
+                {c.doi ? <DoiLink doi={c.doi} variant="text" /> : null}
               </div>
             ))}
           </CardContent>

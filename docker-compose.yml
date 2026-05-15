@@ -91,6 +91,45 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "curl --fail --silent http://localhost:8000/api/health || exit 1"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # data_pipeline: container "on-demand" para coletores Prefect e dbt build.
+  # NAO inicia automaticamente (profile=tools). Uso:
+  #   docker compose run --rm data_pipeline python -m src.flows.worldbank
+  #   docker compose run --rm -w /dbt data_pipeline dbt build --profiles-dir .
+  data_pipeline:
+    build:
+      context: ./data_pipeline
+      dockerfile: Dockerfile
+    image: analise-education-data-pipeline
+    container_name: edu_data_pipeline
+    profiles: ["tools"]
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DATA_ROOT: /data
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-educacao}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-troque_esta_senha}
+      POSTGRES_DB: ${POSTGRES_DB:-educacao_metadata}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-educacao}:${POSTGRES_PASSWORD:-troque_esta_senha}@postgres:5432/${POSTGRES_DB:-educacao_metadata}
+      DUCKDB_PATH: /data/duckdb/education.duckdb
+      DBT_BRONZE_ROOT: /data/bronze
+    volumes:
+      - ./data_pipeline/src:/app/src
+      - ./dbt_project:/dbt
+      - ./data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   agents-server:
     build:
@@ -119,7 +158,8 @@ services:
       - ./agents/src:/app/src
       - ./data:/data
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     healthcheck:
       # python:3.11-slim nao traz curl — usamos stdlib (urllib).
       test:

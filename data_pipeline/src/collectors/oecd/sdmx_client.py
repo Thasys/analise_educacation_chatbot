@@ -28,6 +28,7 @@ import pandas as pd
 from src.collectors.base import BaseCollector
 from src.config import settings
 from src.logging_config import get_logger
+from src.utils.period import parse_period
 from src.utils.sdmx_json import parse_sdmx_json
 
 log = get_logger(__name__)
@@ -92,25 +93,12 @@ class OecdSdmxCollector(BaseCollector):
             "dimensionAtObservation": "AllDimensions",
             "format": "jsondata",
         }
-        start, end = self._period_bounds(period)
+        start, end = parse_period(period)
         if start is not None:
             params["startPeriod"] = str(start)
         if end is not None:
             params["endPeriod"] = str(end)
         return f"{self.api_base}{path}?{urlencode(params)}"
-
-    @staticmethod
-    def _period_bounds(period: str | int | None) -> tuple[int | None, int | None]:
-        if period is None:
-            return None, None
-        text = str(period).strip()
-        if not text or text.lower() == "all":
-            return None, None
-        if "-" in text:
-            start, end = text.split("-", 1)
-            return int(start), int(end)
-        year = int(text)
-        return year, year
 
     # ------------------------------------------------------------------
     # Fetch
@@ -122,16 +110,10 @@ class OecdSdmxCollector(BaseCollector):
         **kwargs: Any,
     ) -> tuple[pd.DataFrame, str]:
         url = self.build_url(reference_period)
-        client = self._http_client or httpx.Client(timeout=settings.http_timeout_seconds)
-        try:
-            log.info("oecd.fetch", url=url, flow=self.flow_ref)
-            response = client.get(url, headers={"Accept": self.DEFAULT_ACCEPT})
-            response.raise_for_status()
-            payload = response.json()
-        finally:
-            if self._http_client is None:
-                client.close()
-
+        log.info("oecd.fetch", url=url, flow=self.flow_ref)
+        payload = self._http_fetch_json(
+            url, accept=self.DEFAULT_ACCEPT, http_client=self._http_client
+        )
         df = parse_sdmx_json(payload)
         log.info(
             "oecd.fetch.parsed",

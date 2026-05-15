@@ -12,13 +12,12 @@ from __future__ import annotations
 
 from crewai import Agent
 
-from src.agents._prompt_loader import load_prompt
-from src.llm import make_llm
+from src.agents._builder import make_agent
 from src.tools.stats_tools import ComputeStatsTool
 
 
 def build_statistician() -> Agent:
-    return Agent(
+    return make_agent(
         role="Analista estatistico de educacao comparada",
         goal=(
             "Calcular estatisticas descritivas e posicionamento do pais "
@@ -26,10 +25,8 @@ def build_statistician() -> Agent:
             "metodologicas explicitas quando dados ou comparabilidade sao "
             "limitados."
         ),
-        backstory=load_prompt("statistician_system"),
-        llm=make_llm("smart"),
+        prompt_name="statistician_system",
+        llm_kind="smart",
         tools=[ComputeStatsTool()],
-        allow_delegation=False,
-        verbose=False,
         max_iter=4,
     )

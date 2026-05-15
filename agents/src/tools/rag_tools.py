@@ -3,22 +3,23 @@
 `RAGSearchTool`: invocada pelo Comparativist e pelo Citation Agent
 para fundamentar afirmacoes ou listar referencias relevantes.
 
-`CiteResolveTool`: stub simples — recebe um DOI e devolve metadata
-estruturada (sem chamar crossref nesta sprint; ficaria como network
-call em Sprint 5+ se necessario). Por agora apenas valida formato.
+`CiteResolveTool`: stub local — recebe um DOI, valida formato e procura
+metadata na colecao RAG local. Network call para crossref.org pode ser
+adicionado futuramente sem mudar a interface.
 """
 
 from __future__ import annotations
 
 import json
 import re
-from typing import Any, ClassVar, Literal
+from typing import ClassVar, Literal
 
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from src.rag.client import RagClient
 from src.rag.search import search_papers
+from src.tools._base import SafeTool, instantiate_with_shared_client
 
 
 # ----------------------------------------------------------------------
@@ -29,7 +30,10 @@ from src.rag.search import search_papers
 class RAGSearchArgs(BaseModel):
     """Argumentos da busca no RAG."""
 
-    query: str = Field(..., min_length=3, max_length=500)
+    # min_length/max_length removidos: viram repeticoes em GBNF que excedem
+    # o limite do llama.cpp parser e crasham o runner do Ollama.
+    # Validacao continua sendo aplicada via RAGSearchTool.run().
+    query: str = Field(..., description="Texto livre da busca (3-500 chars).")
     k: int = Field(default=5, ge=1, le=20)
     lang: Literal["pt", "en", "es"] | None = Field(
         default=None, description="Filtra por idioma do paper."
@@ -42,7 +46,7 @@ class RAGSearchArgs(BaseModel):
     year_to: int | None = Field(default=None, ge=1900, le=2030)
 
 
-class RAGSearchTool(BaseTool):
+class RAGSearchTool(SafeTool):
     """Busca semantica sobre literatura cientifica em educacao comparada."""
 
     name: str = "rag_search"
@@ -57,14 +61,6 @@ class RAGSearchTool(BaseTool):
 
     _client_override: ClassVar[RagClient | None] = None
 
-    def run(self, *args: Any, **kwargs: Any) -> Any:
-        try:
-            return super().run(*args, **kwargs)
-        except ValueError as exc:
-            return json.dumps(
-                {"ok": False, "error": {"error_type": "validation", "message": str(exc)}}
-            )
-
     def _run(
         self,
         query: str,
@@ -74,6 +70,13 @@ class RAGSearchTool(BaseTool):
         year_from: int | None = None,
         year_to: int | None = None,
     ) -> str:
+        # Validacao de tamanho aqui (em vez do args_schema) para nao
+        # gerar repeticao GBNF que crasha o Ollama. Promessa do comentario
+        # no args_schema agora cumprida.
+        if not (3 <= len(query) <= 500):
+            raise ValueError(
+                f"query precisa ter 3-500 chars (recebeu {len(query)})."
+            )
         hits = search_papers(
             query,
             k=k,
@@ -109,16 +112,49 @@ class RAGSearchTool(BaseTool):
 
 _DOI_PATTERN = re.compile(r"^10\.\d{4,9}/[-._;()/:A-Za-z0-9]+$")
 
+# Placeholders detectados em testes 2026-05-15 (qwen2.5:32b emitiu
+# `10.xxxx/...` literalmente). Rejeitamos antes de chegar a Crossref.
+# Cada padrao casa contra a parte SUFIXO do DOI (depois da barra).
+_DOI_PLACEHOLDER_SUFFIXES = re.compile(
+    r"^(?:x{2,}|y{2,}|z{2,}|nnnn|abcd|1234|placeholder|example|sample|tbd|todo|"
+    r"x{2,}[.\-/_]|.*[/\-]x{2,}$|.*y{4,}|.*z{4,})",
+    re.IGNORECASE,
+)
+
+
+def is_real_doi(doi: str | None) -> bool:
+    """True apenas se o DOI parece real (formato + sem placeholder).
+
+    Usado tanto na `CiteResolveTool` quanto no pos-processamento do
+    Citation Agent (analysis_crew._run_citation) para descartar
+    `10.xxxx/...` e similares antes de chegar ao FinalAnswer.
+    """
+    if not doi or not doi.strip():
+        return False
+    cleaned = doi.strip()
+    if not _DOI_PATTERN.match(cleaned):
+        return False
+    # Quebra em prefix/suffix; suffix sempre vai existir por causa do regex.
+    suffix = cleaned.split("/", 1)[1]
+    if _DOI_PLACEHOLDER_SUFFIXES.match(suffix):
+        return False
+    # Tambem rejeita se PREFIX termina com 'xxxx' (ex.: '10.xxxx/...').
+    prefix = cleaned.split("/", 1)[0]
+    if "xxxx" in prefix.lower() or "yyyy" in prefix.lower():
+        return False
+    return True
+
 
 class CiteResolveArgs(BaseModel):
-    doi: str = Field(..., min_length=4, description="DOI no formato 10.xxxx/...")
+    doi: str = Field(..., description="DOI no formato 10.xxxx/...")
 
 
-class CiteResolveTool(BaseTool):
+class CiteResolveTool(SafeTool):
     """Valida DOI e busca metadata local na colecao RAG.
 
-    Sprint 5.5: stub local. Em Sprint 5+ pode chamar crossref.org com
-    cache. Retorna `{ok, valid, doi, found_in_rag, metadata?}`.
+    Hoje stub local — futuramente pode chamar crossref.org com cache
+    para validar contra o registro real. Retorna
+    `{ok, valid, doi, found_in_rag, metadata?}`.
     """
 
     name: str = "cite_resolve"
@@ -132,15 +168,9 @@ class CiteResolveTool(BaseTool):
 
     _client_override: ClassVar[RagClient | None] = None
 
-    def run(self, *args: Any, **kwargs: Any) -> Any:
-        try:
-            return super().run(*args, **kwargs)
-        except ValueError as exc:
-            return json.dumps(
-                {"ok": False, "error": {"error_type": "validation", "message": str(exc)}}
-            )
-
     def _run(self, doi: str) -> str:
+        if not doi or not doi.strip():
+            raise ValueError("doi nao pode ser vazio.")
         valid = bool(_DOI_PATTERN.match(doi.strip()))
         if not valid:
             return json.dumps(
@@ -182,7 +212,7 @@ class CiteResolveTool(BaseTool):
 
 def build_rag_tools(client: RagClient | None = None) -> list[BaseTool]:
     """Retorna `[RAGSearchTool, CiteResolveTool]` com client opcional."""
-    if client is not None:
-        RAGSearchTool._client_override = client
-        CiteResolveTool._client_override = client
-    return [RAGSearchTool(), CiteResolveTool()]
+    return instantiate_with_shared_client(
+        [RAGSearchTool, CiteResolveTool],
+        client,
+    )

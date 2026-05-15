@@ -75,14 +75,12 @@ class Settings(BaseSettings):
             "AGENTS_LLM_API_KEY",
             "AGENTS_ANTHROPIC_API_KEY",
             "ANTHROPIC_API_KEY",
-            "OPENAI_API_KEY",
-            "GEMINI_API_KEY",
-            "GROQ_API_KEY",
-            "OPENROUTER_API_KEY",
         ),
         description=(
             "Chave da API do provider ativo. Ignorada para ollama. "
-            "Aliases dos providers comuns sao aceitos para conveniencia."
+            "AGENTS_LLM_API_KEY tem precedencia; ANTHROPIC_API_KEY mantido "
+            "como alias legado. Para outros providers (openai/gemini/groq/"
+            "openrouter), use AGENTS_LLM_API_KEY explicitamente."
         ),
     )
     llm_api_base: str | None = Field(

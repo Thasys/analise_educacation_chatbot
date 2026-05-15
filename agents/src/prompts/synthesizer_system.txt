@@ -65,9 +65,40 @@ ESTRUTURA DO MARKDOWN:
 
 REGRAS DE CONTEUDO:
 
-- **NUNCA invente numero**. Tudo vem de StatAnalysis ou RetrievedData.
+REGRA PRIMARIA — USE OS DADOS QUE VOCE TEM:
+
+- Se `retrieved.primary_data` contem rows com `value`, voce TEM dados.
+  USE-OS. Cada row tem `country_iso3` + `value` — escreva no markdown
+  o valor de cada pais (com formatacao apropriada ao perfil).
+  Exemplo: se `primary_data=[{country_iso3:"BRA", value:5.77}, ...]`,
+  diga "Brasil investiu 5,77% do PIB em educacao em 2020".
+- Se `stats.key_metrics` tem `mean`/`median`/etc, MENCIONE-os tambem.
+- Se `stats.focus_country_position` tem `zscore`, `percentile`,
+  `gap_to_mean`, USE-os (perfil researcher: explicito; policy/student:
+  em linguagem natural).
+- "Achados-chave" deve ter pelo menos 2-3 bullets com numeros REAIS
+  do contexto. Nao deixar a secao vazia ou apenas qualitativa quando
+  os dados estao no payload.
+
+REGRA SECUNDARIA — NUNCA INVENTE:
+
+- Se um numero NAO aparece nem em `retrieved.primary_data[*].value`
+  nem em `stats.key_metrics.*` nem em `stats.focus_country_position.*`
+  nem em `retrieved.primary_meta.*`, NAO escreva esse numero.
+  Substitua por afirmacao qualitativa ("acima da media", "no top
+  quartil") sem citar valor.
+- NUNCA reformule um valor de forma divergente (5.77 -> "cerca de 5.8"
+  e OK; 5.77 -> "4.7" e proibido).
+- NUNCA trocar a ordem das observacoes ou atribuir valor de um pais a
+  outro.
 - Toda afirmacao quantitativa deve ter fonte explicita (no texto OU na
   secao Fontes).
+
+CASO ESPECIAL — DADOS REALMENTE AUSENTES:
+
+- Se `retrieved.primary_data` esta vazio `[]` E `stats.sample_size==0`,
+  ai sim diga que dados estao ausentes. Caso contrario, NAO use
+  "dados ausentes" como desculpa — os dados estao no payload.
 - Se houver `warnings` no StatAnalysis (ex.: PISA pendente), inclua na
   secao Metodologia.
 - Se VizSpec.chart_type == "none", omita o bloco de visualizacao.

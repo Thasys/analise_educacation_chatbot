@@ -42,6 +42,7 @@ import pandas as pd
 from src.collectors.base import BaseCollector
 from src.config import settings
 from src.logging_config import get_logger
+from src.utils.period import format_odata_period_filter, parse_period
 
 log = get_logger(__name__)
 
@@ -97,7 +98,7 @@ class IpeaDataCollector(BaseCollector):
 
     def _build_filters(self, period: str | int | None) -> list[str]:
         filters: list[str] = []
-        period_filter = self._period_filter(period)
+        period_filter = format_odata_period_filter(parse_period(period))
         if period_filter:
             filters.append(period_filter)
         if self.territorial_level:
@@ -105,21 +106,6 @@ class IpeaDataCollector(BaseCollector):
             value = self.territorial_level.replace("'", "''")
             filters.append(f"NIVNOME eq '{value}'")
         return filters
-
-    @staticmethod
-    def _period_filter(period: str | int | None) -> str | None:
-        if period is None:
-            return None
-        text = str(period).strip()
-        if not text or text.lower() == "all":
-            return None
-        if "-" in text:
-            start, end = text.split("-", 1)
-            start_int = int(start)
-            end_int = int(end)
-            return f"year(VALDATA) ge {start_int} and year(VALDATA) le {end_int}"
-        year = int(text)
-        return f"year(VALDATA) eq {year}"
 
     # ------------------------------------------------------------------
     # Fetch (com paginação OData @odata.nextLink)
@@ -131,12 +117,14 @@ class IpeaDataCollector(BaseCollector):
         **kwargs: Any,
     ) -> tuple[pd.DataFrame, str]:
         first_url = self.build_url(reference_period)
-        client = self._http_client or httpx.Client(timeout=settings.http_timeout_seconds)
-        try:
-            records = self._fetch_paginated(client, first_url)
-        finally:
-            if self._http_client is None:
-                client.close()
+        records = self._http_fetch_paginated(
+            first_url,
+            next_link_fn=_ipea_next_link,
+            records_fn=_ipea_records,
+            http_client=self._http_client,
+            max_pages=200,
+            log_event="ipea.fetch",
+        )
 
         df = self._records_to_dataframe(records)
         log.info(
@@ -147,38 +135,6 @@ class IpeaDataCollector(BaseCollector):
             columns=len(df.columns),
         )
         return df, first_url
-
-    def _fetch_paginated(
-        self,
-        client: httpx.Client,
-        first_url: str,
-    ) -> list[dict[str, Any]]:
-        records: list[dict[str, Any]] = []
-        url: str | None = first_url
-        page = 0
-        while url:
-            page += 1
-            log.info("ipea.fetch", url=url, series=self.series_code, page=page)
-            response = client.get(url, headers={"Accept": "application/json"})
-            response.raise_for_status()
-            payload = response.json()
-
-            value = payload.get("value")
-            if not isinstance(value, list):
-                raise ValueError(
-                    f"IPEADATA OData: payload sem campo 'value' lista (URL: {url}, "
-                    f"payload={payload!r})"
-                )
-            records.extend(value)
-
-            next_link = payload.get("@odata.nextLink")
-            url = next_link if isinstance(next_link, str) and next_link else None
-            if page > 200:  # safety cap (séries longas raramente passam disso)
-                log.warning(
-                    "ipea.pagination.cap_hit", series=self.series_code, pages=page
-                )
-                break
-        return records
 
     # ------------------------------------------------------------------
     # Parsing
@@ -210,6 +166,35 @@ class IpeaDataCollector(BaseCollector):
 
 # ----------------------------------------------------------------------
 # Conveniências para séries-chave de educação
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# Helpers OData (passados ao _http_fetch_paginated do BaseCollector)
+# ----------------------------------------------------------------------
+
+
+def _ipea_next_link(payload: Any) -> str | None:
+    if not isinstance(payload, dict):
+        return None
+    nxt = payload.get("@odata.nextLink")
+    return nxt if isinstance(nxt, str) and nxt else None
+
+
+def _ipea_records(payload: Any, url: str) -> list[dict[str, Any]]:
+    if not isinstance(payload, dict):
+        raise ValueError(
+            f"IPEADATA OData: payload nao-dict (URL: {url}, type={type(payload).__name__})"
+        )
+    value = payload.get("value")
+    if not isinstance(value, list):
+        raise ValueError(
+            f"IPEADATA OData: payload sem campo 'value' lista (URL: {url}, "
+            f"payload={payload!r})"
+        )
+    return value
+
+
+# ----------------------------------------------------------------------
+# Conveniencias para series-chave de educacao
 # ----------------------------------------------------------------------
 def make_analfabetismo_15m_collector(**kwargs: Any) -> IpeaDataCollector:
     """ANALF15M — Taxa de analfabetismo, 15 anos ou mais (PNAD/Censo)."""

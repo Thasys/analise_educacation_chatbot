@@ -11,9 +11,8 @@ import { cn } from '@/lib/utils/cn';
  * Pagina de exploracao dos marts Gold.
  *
  * Layout: lista (esquerda) + detalhe (direita) dentro do Workspace.
- * Sprint 6.4: lista funcional com filtro por tag/texto. Preview de
- * linhas (`/api/data/:dataset/preview`) fica para sprint futura quando
- * o endpoint for adicionado ao api/.
+ * Funcional com filtro por tag/texto. Preview de linhas
+ * (`/api/data/:dataset/preview`) ainda nao implementado no gateway.
  */
 export function DataExplorer() {
   const { data, isLoading, isError, error, refetch } = useCatalog();
@@ -235,7 +234,7 @@ function MartDetail({ mart }: { mart: MartCatalogItem }) {
           <CardTitle className="text-sm">Preview de linhas</CardTitle>
           <CardDescription className="text-xs">
             Endpoint <code className="font-mono">/api/data/{mart.name}/preview</code> ainda não foi
-            implementado no gateway. Sprint futura adicionará amostra de 100 linhas.
+            implementado no gateway. Adicionar endpoint de amostra de 100 linhas e ligar aqui.
           </CardDescription>
         </CardHeader>
       </Card>

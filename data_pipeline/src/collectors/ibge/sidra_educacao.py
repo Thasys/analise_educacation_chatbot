@@ -93,15 +93,7 @@ class SidraEducacaoCollector(BaseCollector):
         url = self.build_url(reference_period)
         log.info("sidra.fetch", url=url, table=self.table_id, period=str(reference_period))
 
-        client = self._http_client or httpx.Client(timeout=settings.http_timeout_seconds)
-        try:
-            response = client.get(url, headers={"Accept": "application/json"})
-            response.raise_for_status()
-            payload = response.json()
-        finally:
-            if self._http_client is None:
-                client.close()
-
+        payload = self._http_fetch_json(url, http_client=self._http_client)
         df = self._parse_payload(payload)
         log.info(
             "sidra.fetch.parsed",

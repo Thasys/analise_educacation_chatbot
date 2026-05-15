@@ -9,13 +9,18 @@ Cada tool e wrapper fino sobre o `EduGatewayClient`:
 4. Em erro estruturado (`GatewayError`), serializa o erro com hint de
    correcao — o agente decide o proximo passo.
 
-`_SafeDataTool` captura tambem o `ValueError` que CrewAI BaseTool.run
-levanta quando os args nao batem com `args_schema` — convertendo em
-JSON de erro (em vez de quebrar o loop CrewAI).
+`SafeTool` (em `_base.py`) captura o `ValueError` que CrewAI BaseTool.run
+levanta quando os args nao batem com `args_schema` — convertendo em JSON
+de erro (em vez de quebrar o loop CrewAI).
 
 Estrategia de cliente compartilhado: `_client_override` em ClassVar
 (setada por `build_data_tools(client=...)`). Em producao, ausente; cada
 instancia cria seu proprio `EduGatewayClient` com defaults.
+
+Atualizado 2026-05-14 (#2 do DRY pass): as tools `timeseries`, `compare`
+e `ranking` eram quase identicas. Agora herdam de `_EndpointTool` que
+recebe `endpoint` e `args_model` como ClassVar. Adicionar uma 4a tool
+(ex.: `data_describe` do MP3) e trivial.
 """
 
 from __future__ import annotations
@@ -34,6 +39,7 @@ from src.schemas import (
     RankingArgs,
     TimeseriesArgs,
 )
+from src.tools._base import SafeTool, instantiate_with_shared_client
 
 
 # ----------------------------------------------------------------------
@@ -65,12 +71,6 @@ def _serialize_response(resp: DataResponse | GatewayError) -> str:
     )
 
 
-def _validation_error_payload(message: str) -> str:
-    return json.dumps(
-        {"ok": False, "error": {"error_type": "validation", "message": message}}
-    )
-
-
 def _client_for_tool(tool_cls: type[BaseTool]) -> EduGatewayClient:
     """Resolve o EduGatewayClient da tool — injetado em testes via
     `ToolClass._client_override`, ou cria um novo em producao."""
@@ -78,27 +78,42 @@ def _client_for_tool(tool_cls: type[BaseTool]) -> EduGatewayClient:
     return override if override is not None else EduGatewayClient()
 
 
-class _SafeDataTool(BaseTool):
-    """Mixin que captura erros de validacao do args_schema e devolve JSON.
+# ----------------------------------------------------------------------
+# Base — _EndpointTool
+# ----------------------------------------------------------------------
 
-    Sem isso, BaseTool.run() levantaria ValueError para o agente, que
-    quebraria o loop CrewAI. Devolvendo JSON estruturado, o LLM pode
-    ler o erro, corrigir os args e tentar de novo.
+
+class _EndpointTool(SafeTool):
+    """Base para tools que sao thin wrappers sobre um endpoint do gateway.
+
+    Subclasses declaram `endpoint` (nome usado por `safe_call`) e
+    `args_model` (BaseModel a instanciar a partir dos kwargs). O `_run`
+    fica generico — adicionar uma nova tool eh ~10 linhas (subclasse com
+    name, description, args_schema, endpoint, args_model).
     """
 
-    def run(self, *args: Any, **kwargs: Any) -> Any:
-        try:
-            return super().run(*args, **kwargs)
-        except ValueError as exc:
-            return _validation_error_payload(str(exc))
+    endpoint: ClassVar[str] = ""
+    args_model: ClassVar[type[BaseModel]] = BaseModel
+
+    _client_override: ClassVar[EduGatewayClient | None] = None
+
+    def _run(self, **kwargs: Any) -> str:
+        args = type(self).args_model(**kwargs)
+        client = _client_for_tool(type(self))
+        resp = client.safe_call(
+            type(self).endpoint,
+            args,
+            request_payload=args.model_dump(exclude_none=True),
+        )
+        return _serialize_response(resp)
 
 
 # ----------------------------------------------------------------------
-# Tool 1: data_catalog
+# Tool 1: data_catalog (sem args, mantem _run proprio)
 # ----------------------------------------------------------------------
 
 
-class DataCatalogTool(_SafeDataTool):
+class DataCatalogTool(SafeTool):
     name: str = "data_catalog"
     description: str = (
         "Lista todos os marts Gold publicados na camada analitica do sistema. "
@@ -121,7 +136,7 @@ class DataCatalogTool(_SafeDataTool):
 # ----------------------------------------------------------------------
 
 
-class DataTimeseriesTool(_SafeDataTool):
+class DataTimeseriesTool(_EndpointTool):
     name: str = "data_timeseries"
     description: str = (
         "Serie temporal de um indicador para UM pais (multi-fonte). "
@@ -133,15 +148,8 @@ class DataTimeseriesTool(_SafeDataTool):
     )
     args_schema: type[BaseModel] = TimeseriesArgs
 
-    _client_override: ClassVar[EduGatewayClient | None] = None
-
-    def _run(self, **kwargs: Any) -> str:
-        args = TimeseriesArgs(**kwargs)
-        client = _client_for_tool(type(self))
-        resp = client.safe_call(
-            "timeseries", args, request_payload=args.model_dump(exclude_none=True)
-        )
-        return _serialize_response(resp)
+    endpoint: ClassVar[str] = "timeseries"
+    args_model: ClassVar[type[BaseModel]] = TimeseriesArgs
 
 
 # ----------------------------------------------------------------------
@@ -149,7 +157,7 @@ class DataTimeseriesTool(_SafeDataTool):
 # ----------------------------------------------------------------------
 
 
-class DataCompareTool(_SafeDataTool):
+class DataCompareTool(_EndpointTool):
     name: str = "data_compare"
     description: str = (
         "Comparacao de N paises (1-50) em UM indicador para UM ano. "
@@ -160,15 +168,18 @@ class DataCompareTool(_SafeDataTool):
     )
     args_schema: type[BaseModel] = CompareArgs
 
-    _client_override: ClassVar[EduGatewayClient | None] = None
+    endpoint: ClassVar[str] = "compare"
+    args_model: ClassVar[type[BaseModel]] = CompareArgs
 
     def _run(self, **kwargs: Any) -> str:
-        args = CompareArgs(**kwargs)
-        client = _client_for_tool(type(self))
-        resp = client.safe_call(
-            "compare", args, request_payload=args.model_dump(exclude_none=True)
-        )
-        return _serialize_response(resp)
+        # Validacao 1-50 paises aqui (schema perdeu min_length/max_length
+        # por compat GBNF Ollama). Mantem o contrato com o usuario do tool.
+        countries = kwargs.get("countries") or []
+        if not (1 <= len(countries) <= 50):
+            raise ValueError(
+                f"countries precisa ter 1-50 paises (recebeu {len(countries)})."
+            )
+        return super()._run(**kwargs)
 
 
 # ----------------------------------------------------------------------
@@ -176,7 +187,7 @@ class DataCompareTool(_SafeDataTool):
 # ----------------------------------------------------------------------
 
 
-class DataRankingTool(_SafeDataTool):
+class DataRankingTool(_EndpointTool):
     name: str = "data_ranking"
     description: str = (
         "Ranking de paises em um indicador, opcionalmente filtrado por grupo. "
@@ -188,15 +199,8 @@ class DataRankingTool(_SafeDataTool):
     )
     args_schema: type[BaseModel] = RankingArgs
 
-    _client_override: ClassVar[EduGatewayClient | None] = None
-
-    def _run(self, **kwargs: Any) -> str:
-        args = RankingArgs(**kwargs)
-        client = _client_for_tool(type(self))
-        resp = client.safe_call(
-            "ranking", args, request_payload=args.model_dump(exclude_none=True)
-        )
-        return _serialize_response(resp)
+    endpoint: ClassVar[str] = "ranking"
+    args_model: ClassVar[type[BaseModel]] = RankingArgs
 
 
 # ----------------------------------------------------------------------
@@ -210,17 +214,10 @@ def build_data_tools(
     """Retorna as 4 tools de dados, opcionalmente com client compartilhado.
 
     Em producao, basta `build_data_tools()` — cada tool cria seu cliente
-    com defaults das settings. Em testes, passe `client=mock_client`; a
-    factory grava o override em ClassVar antes de instanciar as tools.
+    com defaults das settings. Em testes, passe `client=mock_client`; o
+    helper grava o override em ClassVar antes de instanciar as tools.
     """
-    if client is not None:
-        DataCatalogTool._client_override = client
-        DataTimeseriesTool._client_override = client
-        DataCompareTool._client_override = client
-        DataRankingTool._client_override = client
-    return [
-        DataCatalogTool(),
-        DataTimeseriesTool(),
-        DataCompareTool(),
-        DataRankingTool(),
-    ]
+    return instantiate_with_shared_client(
+        [DataCatalogTool, DataTimeseriesTool, DataCompareTool, DataRankingTool],
+        client,
+    )

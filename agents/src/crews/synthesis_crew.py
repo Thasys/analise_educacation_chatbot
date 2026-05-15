@@ -5,7 +5,7 @@ referenciar a viz no markdown via VizSpec). Os dois agentes recebem o
 mesmo contexto consolidado: IntentDecision + EntityExtraction +
 RetrievedData + StatAnalysis + ComparativeContext.
 
-Em uma versao futura (Sprint 5.6) podemos paralelizar os dois com
+Em uma versao futura podemos paralelizar os dois com
 Process.hierarchical, ja que a saida do Visualizer entra no Synthesizer
 mas pode ser computada simultaneamente em ~70% dos casos.
 """
@@ -139,6 +139,77 @@ def run_synthesis_flow(
         sources=final.sources_cited,
     )
     return viz, final
+
+
+def regenerate_final_after_fact_check(
+    core: CoreFlowOutput,
+    retrieved: RetrievedData,
+    stats: StatAnalysis,
+    context: ComparativeContext,
+    *,
+    divergences: list[float],
+    previous_markdown: str,
+) -> FinalAnswer:
+    """Regenera APENAS o `FinalAnswer` apos fact-check detectar divergencias.
+
+    Roda so o Synthesizer (sem Visualizer, ja temos VizSpec) com uma
+    instrucao explicita listando os numeros divergentes e os valores
+    canonicos esperados. Implementa o caminho de retry do MP4.
+
+    A viz nao precisa ser regerada — o frontend ja recebe o
+    `plotly_figure` do primeiro run. Aqui foco apenas no markdown.
+    """
+    synthesizer = build_synthesizer()
+    context_blob = _build_context(core, retrieved, stats, context)
+
+    # Lista os primeiros 10 valores REAIS para o LLM consultar
+    primary_vals = [
+        f"{r.get('country_iso3', '?')}={r.get('value')}"
+        for r in (retrieved.primary_data or [])[:10]
+        if r.get("value") is not None
+    ]
+    primary_meta = retrieved.primary_meta or {}
+    meta_vals = [
+        f"{k}={primary_meta[k]}"
+        for k in (
+            "zscore_in_oecd",
+            "percentile_in_oecd",
+            "gap_to_oecd_mean",
+            "trend_slope",
+        )
+        if k in primary_meta and primary_meta[k] is not None
+    ]
+
+    divergences_str = ", ".join(f"{n:g}" for n in divergences[:10])
+    retry_task = Task(
+        description=(
+            "REGENERACAO POS FACT-CHECK.\n\n"
+            "A versao anterior do markdown continha numeros que NAO existem "
+            "no contexto. Voce DEVE produzir uma nova versao usando APENAS "
+            "numeros da lista canonica abaixo.\n\n"
+            f"NUMEROS DIVERGENTES (NAO usar): {divergences_str}\n\n"
+            f"NUMEROS CANONICOS (USE estes): {', '.join(primary_vals + meta_vals)}\n\n"
+            "REGRA ABSOLUTA: cada numero no markdown deve aparecer na lista "
+            "de NUMEROS CANONICOS. Se nao puder afirmar quantitativamente "
+            "algo, use linguagem qualitativa ('acima da media', sem citar "
+            "o valor).\n\n"
+            f"MARKDOWN ANTERIOR (para referencia, NAO copie numeros dele):\n"
+            f"{previous_markdown[:1500]}\n\n"
+            f"CONTEXTO COMPLETO:\n{context_blob}"
+        ),
+        expected_output="JSON FinalAnswer revisado",
+        output_pydantic=FinalAnswer,
+        agent=synthesizer,
+    )
+    crew = Crew(
+        agents=[synthesizer],
+        tasks=[retry_task],
+        process=Process.sequential,
+        verbose=False,
+    )
+    crew.kickoff()
+    raw = retry_task.output.pydantic or retry_task.output.raw
+    return _coerce(FinalAnswer, raw)
 
 
 # Re-export de tipos uteis

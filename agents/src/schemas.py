@@ -65,7 +65,7 @@ class CompareArgs(BaseModel):
     """Argumentos da tool data_compare."""
 
     indicator: IndicatorId
-    countries: list[CountryISO3] = Field(..., min_length=1, max_length=50)
+    countries: list[CountryISO3] = Field(..., description="Codigos ISO-3 (1-50 paises).")
     year: int = Field(..., ge=1990, le=2030)
     source: SourceTag = "worldbank"
 
@@ -140,7 +140,6 @@ class IntentDecision(BaseModel):
     )
     reasoning: str = Field(
         ...,
-        max_length=500,
         description="Justificativa breve da escolha (max 2 frases).",
     )
     confidence: float = Field(
@@ -155,8 +154,8 @@ class EntityExtraction(BaseModel):
     """Saida do Profile & Intent Agent — entidades extraidas da pergunta.
 
     Todos os campos sao opcionais porque a pergunta pode nao mencionar
-    todas. O Retriever Agent (Sprint 5.2) usa estas entidades para
-    montar argumentos das tools de dados.
+    todas. O Retriever Agent usa estas entidades para montar argumentos
+    das tools de dados.
     """
 
     indicator: IndicatorId | None = Field(
@@ -191,7 +190,6 @@ class EntityExtraction(BaseModel):
     )
     reasoning: str = Field(
         default="",
-        max_length=500,
         description="Como as entidades foram inferidas (max 2 frases).",
     )
 
@@ -220,7 +218,6 @@ class RetrievedData(BaseModel):
 
     summary: str = Field(
         ...,
-        max_length=400,
         description="1-2 frases descrevendo o que foi recuperado.",
     )
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
@@ -236,7 +233,7 @@ class RetrievedData(BaseModel):
 
 
 # ----------------------------------------------------------------------
-# Saidas dos agentes analiticos (Sprint 5.3)
+# Saidas dos agentes analiticos (Statistician + Comparativist)
 # ----------------------------------------------------------------------
 
 
@@ -299,7 +296,6 @@ class StatAnalysis(BaseModel):
     )
     confidence_note: str = Field(
         default="",
-        max_length=400,
         description="1-2 frases sobre o que esta analise mostra/nao mostra.",
     )
 
@@ -309,7 +305,6 @@ class ComparativeContext(BaseModel):
 
     narrative: str = Field(
         ...,
-        max_length=3000,
         description="2-4 paragrafos contextualizando o resultado.",
     )
     key_findings: list[str] = Field(
@@ -318,7 +313,6 @@ class ComparativeContext(BaseModel):
     )
     historical_context: str | None = Field(
         default=None,
-        max_length=1000,
         description="Referencias ao PNE, evolucao historica, contexto de politica publica.",
     )
     methodological_caveats: list[str] = Field(
@@ -332,7 +326,7 @@ class ComparativeContext(BaseModel):
 
 
 # ----------------------------------------------------------------------
-# Saidas dos agentes de sintese (Sprint 5.4)
+# Saidas dos agentes de sintese (Visualizer + Synthesizer)
 # ----------------------------------------------------------------------
 
 
@@ -340,7 +334,7 @@ ChartType = Literal[
     "bar_horizontal",  # ranking de N paises em UM indicador
     "bar_vertical",    # comparacao discreta com poucos paises
     "line_multi",      # serie temporal (1 pais multi-fonte ou multi-pais 1 fonte)
-    "scatter",         # cruzamento (gasto x alfab) — Sprint 5+
+    "scatter",         # cruzamento (gasto x alfab) — uso futuro
     "none",            # nenhuma viz aplicavel (fluxo simple)
 ]
 
@@ -354,7 +348,7 @@ class VizSpec(BaseModel):
     """
 
     chart_type: ChartType = Field(..., description="Tipo de grafico.")
-    title: str = Field(..., max_length=200)
+    title: str = Field(...)
     plotly_figure: dict[str, Any] = Field(
         ...,
         description="Figure dict valido para Plotly.js (data + layout).",
@@ -370,7 +364,7 @@ class VizSpec(BaseModel):
 
 
 # ----------------------------------------------------------------------
-# RAG / Citations (Sprint 5.5)
+# RAG / Citations (Citation Agent + RAGSearchTool)
 # ----------------------------------------------------------------------
 
 
@@ -384,7 +378,6 @@ class Citation(BaseModel):
     journal: str | None = None
     snippet: str | None = Field(
         default=None,
-        max_length=500,
         description="Trecho relevante (max 200 chars sem aspas).",
     )
     relevance_score: float | None = Field(
@@ -411,7 +404,6 @@ class FinalAnswer(BaseModel):
 
     markdown: str = Field(
         ...,
-        max_length=8000,
         description="Resposta completa em markdown adaptada ao perfil.",
     )
     profile_used: ProfileKind = Field(

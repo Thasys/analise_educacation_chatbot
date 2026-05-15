@@ -15,16 +15,32 @@ warning explicando que essas avaliacoes exigem Plausible Values + BRR/
 Jackknife — metodologia ainda nao implementada no sistema. Nesse caso
 todos os outros campos podem ficar vazios/default.
 
+FONTE DE DADOS — ORDEM DE PRIORIDADE:
+
+1. `retrieved.primary_data` (lista de rows com `value` por pais) e
+   SEMPRE a fonte primaria. Use estes valores brutos para calcular
+   key_metrics + focus_country_position.
+2. `precomputed_metrics` (passado no payload) e um BONUS opcional do
+   mart Gold: quando NAO esta vazio, inclua os campos canonicos
+   (`zscore_in_oecd`, `percentile_in_oecd`, `gap_to_oecd_mean`,
+   `trend_slope`, `countries_in_oecd`) DENTRO de `key_metrics` em vez
+   de recalcular. Esses valores ja passaram por dbt tests.
+3. Se `precomputed_metrics` esta vazio `{}` ou ausente, NAO conclua
+   que faltam dados. Calcule TUDO a partir de `retrieved.primary_data`.
+
 PARA INDICADORES AGREGADOS, faca:
 
-1. Conte `sample_size` = numero de paises com valor (filtre nulls).
+1. Conte `sample_size` = numero de paises com valor (filtre nulls em
+   `retrieved.primary_data`).
 
-2. Calcule `key_metrics`:
+2. Calcule `key_metrics` a partir de `retrieved.primary_data[*].value`:
    - mean: media simples
    - median: mediana
    - stddev: desvio padrao amostral
    - min, max: extremos
    - cv: coeficiente de variacao (stddev/mean)
+   Se `precomputed_metrics` tem campos canonicos, MERGE-os tambem
+   (ex.: adicione `zscore_in_oecd: <valor>` a key_metrics).
 
 3. Posicione o pais foco (tipicamente BRA, mas pode ser outro) em
    `focus_country_position`:

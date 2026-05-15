@@ -11,9 +11,8 @@ from __future__ import annotations
 
 from crewai import Agent
 
-from src.agents._prompt_loader import load_prompt
+from src.agents._builder import make_agent
 from src.api_client import EduGatewayClient
-from src.llm import make_llm
 from src.tools import build_data_tools
 
 
@@ -25,17 +24,15 @@ def build_retriever(client: EduGatewayClient | None = None) -> Agent:
             Em testes, passe um client com `httpx.MockTransport`. Em
             producao, deixe `None` para usar o default das settings.
     """
-    return Agent(
+    return make_agent(
         role="Recuperador de dados educacionais comparados",
         goal=(
             "Selecionar e invocar as tools de dados (catalog, timeseries, "
             "compare, ranking) para recuperar as observacoes necessarias "
             "para responder a pergunta do usuario, sem escrever SQL."
         ),
-        backstory=load_prompt("retriever_system"),
-        llm=make_llm("fast"),
+        prompt_name="retriever_system",
+        llm_kind="fast",
         tools=build_data_tools(client=client),
-        allow_delegation=False,
-        verbose=False,
         max_iter=5,
     )

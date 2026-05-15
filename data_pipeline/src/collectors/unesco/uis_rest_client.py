@@ -44,6 +44,7 @@ import pandas as pd
 from src.collectors.base import BaseCollector
 from src.config import settings
 from src.logging_config import get_logger
+from src.utils.period import parse_period
 
 log = get_logger(__name__)
 
@@ -95,25 +96,12 @@ class UisRestCollector(BaseCollector):
         params: dict[str, str] = {"indicator": self.indicator}
         if self.geo_unit:
             params["geoUnit"] = self.geo_unit
-        start, end = self._period_bounds(period)
+        start, end = parse_period(period)
         if start is not None:
             params["start"] = str(start)
         if end is not None:
             params["end"] = str(end)
         return f"{self.api_base}/data/indicators?{urlencode(params)}"
-
-    @staticmethod
-    def _period_bounds(period: str | int | None) -> tuple[int | None, int | None]:
-        if period is None:
-            return None, None
-        text = str(period).strip()
-        if not text or text.lower() == "all":
-            return None, None
-        if "-" in text:
-            left, right = text.split("-", 1)
-            return int(left), int(right)
-        year = int(text)
-        return year, year
 
     # ------------------------------------------------------------------
     # Fetch
@@ -125,18 +113,8 @@ class UisRestCollector(BaseCollector):
         **kwargs: Any,
     ) -> tuple[pd.DataFrame, str]:
         url = self.build_url(reference_period)
-        client = self._http_client or httpx.Client(
-            timeout=settings.http_timeout_seconds
-        )
-        try:
-            log.info("uis_rest.fetch", url=url, indicator=self.indicator)
-            response = client.get(url)
-            response.raise_for_status()
-            payload = response.json()
-        finally:
-            if self._http_client is None:
-                client.close()
-
+        log.info("uis_rest.fetch", url=url, indicator=self.indicator)
+        payload = self._http_fetch_json(url, http_client=self._http_client)
         df = self.parse_records(payload)
         log.info(
             "uis_rest.fetch.parsed",

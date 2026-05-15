@@ -12,8 +12,13 @@ RUN apt-get update \
 
 COPY pyproject.toml ./
 RUN pip install --upgrade pip \
-    && pip install -e ".[dev]"
+    && pip install -e ".[dev]" \
+    && pip install "dbt-core>=1.8" "dbt-duckdb>=1.8"
 
 COPY src ./src
 
-CMD ["python", "-c", "print('data_pipeline container OK')"]
+# Mantemos o container apto a rodar tanto coletores (python -m src.flows.X)
+# quanto dbt (dbt build, dbt seed, etc). Use:
+#   docker compose run --rm data_pipeline python -m src.flows.worldbank
+#   docker compose run --rm -w /dbt data_pipeline dbt build
+CMD ["python", "-c", "print('data_pipeline container OK - use docker compose run --rm data_pipeline <comando>')"]

@@ -1,8 +1,11 @@
 """Crews CrewAI do sistema de analise comparada.
 
 - `core_crew` — Orchestrator + Profile & Intent (sempre roda).
-- `analysis_crew` — Retriever + Statistician + Comparativist + Citation (Sprint 5.2-5.3).
-- `synthesis_crew` — Visualizer + Synthesizer (Sprint 5.4).
+- `analysis_crew` — Retriever + Statistician + Comparativist + Citation.
+- `synthesis_crew` — Visualizer + Synthesizer.
+- `master_flow` — orquestra Core -> Analysis -> Synthesis + Fact Checker.
+
+Ver `docs/architecture/agents.md` para diagrama e detalhes.
 """
 
 from src.crews.analysis_crew import run_analysis_flow

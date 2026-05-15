@@ -80,5 +80,5 @@ def make_llm(role: LLMRole, *, temperature: float | None = None) -> LLM:
         "max_tokens": settings.llm_max_tokens,
     }
     if settings.llm_api_base:
-        kwargs["api_base"] = settings.llm_api_base
+        kwargs["base_url"] = settings.llm_api_base
     return LLM(**kwargs)

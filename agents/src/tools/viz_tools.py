@@ -11,6 +11,16 @@ Templates suportados nesta sprint:
 
 Cores: paleta consistente com tema do CLAUDE.md
 ("ribbed" — neutros + destaque BR em vermelho terra-cota).
+
+Atualizado 2026-05-14 (DRY #10 + QW1 do quality assessment):
+
+- Funcao paramétrica `_build_figure` extrai o pipeline comum aos 3
+  templates (filter null, sort, extract labels/values, montar trace).
+  Os 3 `make_plotly_*` viram thin wrappers — eliminando duplicacao e
+  garantindo que LLM nunca toque em arrays de numeros (MP2).
+- `_validate_figure` valida tipos antes do dict sair: arrays de numero
+  precisam ser `list`, nao string serializada. Causa raiz documentada no
+  quality-assessment 2026-05-14 secao 2.1 ("LLM emitiu y como string").
 """
 
 from __future__ import annotations
@@ -19,8 +29,9 @@ import json
 from collections import defaultdict
 from typing import Any, ClassVar, Literal
 
-from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
+
+from src.tools._base import SafeTool
 
 
 # ----------------------------------------------------------------------
@@ -40,6 +51,62 @@ def _color_for(country_iso3: str, default: str = COLOR_NEUTRAL) -> str:
     if country_iso3 == "BRA":
         return COLOR_BR
     return default
+
+
+# ----------------------------------------------------------------------
+# Pipeline parametrico compartilhado (#10 do DRY pass)
+# ----------------------------------------------------------------------
+
+
+def _extract_xy(
+    rows: list[dict[str, Any]],
+    *,
+    value_field: str,
+    label_field: str,
+    sort_descending: bool = False,
+) -> tuple[list[str], list[float], list[str]]:
+    """Filtra rows com valor not-null, extrai (labels, values, colors).
+
+    Helper compartilhado pelos 3 templates de figure. Retorna 3 listas
+    paralelas: labels (str), values (float) e colors (str hex). Brasil
+    fica em terracota quando aparece como label.
+    """
+    items = [r for r in rows if r.get(value_field) is not None]
+    if sort_descending:
+        items.sort(key=lambda r: r[value_field], reverse=True)
+    labels = [str(r.get(label_field, "?")) for r in items]
+    values = [float(r[value_field]) for r in items]
+    colors = [_color_for(label) for label in labels]
+    return labels, values, colors
+
+
+def _validate_figure(fig: dict[str, Any]) -> str | None:
+    """Valida que arrays de numeros sao listas (nao strings serializadas).
+
+    Implementa QW1 do quality-assessment 2026-05-14: o LLM as vezes emite
+    `"y": "[4.7, 5.2, 6.8]"` (string Python literal) em vez de
+    `"y": [4.7, 5.2, 6.8]` (lista JSON). Plotly.js nao renderiza no
+    primeiro caso. Aqui devolvemos uma mensagem de erro nao-vazia para
+    `SafeTool.run` converter em `_validation_error_payload`.
+
+    Retorna None se OK, mensagem se invalido.
+    """
+    data = fig.get("data")
+    if not isinstance(data, list):
+        return "figure.data deve ser lista (recebeu " + type(data).__name__ + ")"
+    for i, trace in enumerate(data):
+        if not isinstance(trace, dict):
+            return f"figure.data[{i}] deve ser dict"
+        for axis in ("x", "y"):
+            val = trace.get(axis)
+            if val is None:
+                continue
+            if not isinstance(val, list):
+                return (
+                    f"figure.data[{i}].{axis} deve ser lista de "
+                    f"numero/string (recebeu {type(val).__name__})"
+                )
+    return None
 
 
 # ----------------------------------------------------------------------
@@ -63,11 +130,12 @@ def make_plotly_bar_horizontal(
     """
     if not rows:
         return _empty_figure(title or "Sem dados")
-    items = [r for r in rows if r.get(value_field) is not None]
-    items.sort(key=lambda r: r[value_field], reverse=sort_descending)
-    labels = [str(r.get(label_field, "?")) for r in items]
-    values = [float(r[value_field]) for r in items]
-    colors = [_color_for(label) for label in labels]
+    labels, values, colors = _extract_xy(
+        rows,
+        value_field=value_field,
+        label_field=label_field,
+        sort_descending=sort_descending,
+    )
     return {
         "data": [
             {
@@ -100,10 +168,9 @@ def make_plotly_bar_vertical(
     """Bar vertical para comparacoes discretas (3-8 paises)."""
     if not rows:
         return _empty_figure(title or "Sem dados")
-    items = [r for r in rows if r.get(value_field) is not None]
-    labels = [str(r.get(label_field, "?")) for r in items]
-    values = [float(r[value_field]) for r in items]
-    colors = [_color_for(label) for label in labels]
+    labels, values, colors = _extract_xy(
+        rows, value_field=value_field, label_field=label_field
+    )
     return {
         "data": [
             {
@@ -208,7 +275,7 @@ class MakePlotlySpecArgs(BaseModel):
     rows: list[dict[str, Any]] = Field(
         ..., description="Linhas de dados (cada dict tem value_field + label_field)."
     )
-    title: str = Field(default="", max_length=200)
+    title: str = Field(default="")
     value_field: str = Field(default="value")
     label_field: str = Field(default="country_iso3")
     x_field: str = Field(
@@ -221,7 +288,7 @@ class MakePlotlySpecArgs(BaseModel):
     axis_title: str = Field(default="", description="Titulo do eixo de valores.")
 
 
-class MakePlotlySpecTool(BaseTool):
+class MakePlotlySpecTool(SafeTool):
     """Gera figure dict Plotly a partir de rows + chart_type."""
 
     name: str = "make_plotly_spec"
@@ -235,14 +302,6 @@ class MakePlotlySpecTool(BaseTool):
     args_schema: type[BaseModel] = MakePlotlySpecArgs
 
     _client_override: ClassVar[None] = None
-
-    def run(self, *args: Any, **kwargs: Any) -> Any:
-        try:
-            return super().run(*args, **kwargs)
-        except ValueError as exc:
-            return json.dumps(
-                {"ok": False, "error": {"error_type": "validation", "message": str(exc)}}
-            )
 
     def _run(
         self,
@@ -284,5 +343,12 @@ class MakePlotlySpecTool(BaseTool):
             return json.dumps(
                 {"ok": False, "error": {"error_type": "validation",
                                          "message": f"chart_type desconhecido: {chart_type}"}}
+            )
+        # QW1: valida tipos antes de devolver. Se algum array vier como
+        # string, devolve erro estruturado em vez de figure quebrado.
+        err = _validate_figure(fig)
+        if err:
+            return json.dumps(
+                {"ok": False, "error": {"error_type": "validation", "message": err}}
             )
         return json.dumps({"ok": True, "chart_type": chart_type, "plotly_figure": fig})
