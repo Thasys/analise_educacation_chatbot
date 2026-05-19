@@ -103,6 +103,7 @@ def run_master(
     gateway_client: EduGatewayClient | None = None,
     rag_client: RagClient | None = None,
     on_event: EventCallback | None = None,
+    no_guardrails: bool = False,
 ) -> FinalAnswer:
     """Orquestra Core -> Analysis -> Synthesis e devolve FinalAnswer.
 
@@ -116,6 +117,14 @@ def run_master(
             Cada evento e um dict com `type` (agent_started, agent_done,
             final_answer, error) e `ts` (epoch float). Outros campos
             dependem do tipo. Usado pelo endpoint /api/chat/stream.
+        no_guardrails: quando True, executa o pipeline como **baseline
+            RAG puro** (Secao 5.1 do plano de avaliacao). Especifica-
+            mente desativa:
+              * Retriever auto-populate determinístico (ADR 0006).
+              * Filtro de DOIs placeholder no Citation Agent.
+              * Fact Checker pos-Synthesizer + retry (ADR 0007).
+            Usado APENAS pela bateria de testes para gerar o denomi-
+            nador da TIA. Em producao, sempre False.
 
     Returns:
         FinalAnswer com markdown + visualizations + citations + warnings.
@@ -159,7 +168,9 @@ def run_master(
         _emit(on_event, {"type": "agent_done", "agent": "Comparativist"})
 
         _emit(on_event, {"type": "agent_started", "agent": "Citation"})
-        citations = _run_citation(core, context, rag_client)
+        citations = _run_citation(
+            core, context, rag_client, no_guardrails=no_guardrails
+        )
         _emit(
             on_event,
             {"type": "agent_done", "agent": "Citation", "items": len(citations.items)},
@@ -167,7 +178,9 @@ def run_master(
     else:
         # data ou deep — Analysis completo (4 etapas, evento por etapa)
         _emit(on_event, {"type": "agent_started", "agent": "Retriever"})
-        retrieved = _run_retriever(core, gateway_client)
+        retrieved = _run_retriever(
+            core, gateway_client, no_guardrails=no_guardrails
+        )
         _emit(
             on_event,
             {
@@ -196,7 +209,9 @@ def run_master(
         _emit(on_event, {"type": "agent_done", "agent": "Comparativist"})
 
         _emit(on_event, {"type": "agent_started", "agent": "Citation"})
-        citations = _run_citation(core, context, rag_client)
+        citations = _run_citation(
+            core, context, rag_client, no_guardrails=no_guardrails
+        )
         _emit(
             on_event,
             {"type": "agent_done", "agent": "Citation", "items": len(citations.items)},
@@ -214,11 +229,38 @@ def run_master(
         },
     )
 
-    # 4. Fact-check (MP4 do quality-assessment 2026-05-14).
+    # 4. Fact-check (MP4 do quality-assessment 2026-05-14, ADR 0007).
     # Validacao deterministica: extrai numeros do markdown e cruza com
     # `retrieved.primary_data` + `primary_meta`. Se >20% divergentes,
     # regenera o Synthesizer 1x com lista de divergencias. Se ainda
     # falhar, marca warning visivel.
+    # Quando `no_guardrails=True` (baseline da avaliacao), pulamos.
+    if no_guardrails:
+        _emit(
+            on_event,
+            {"type": "agent_skipped", "agent": "Fact Checker", "reason": "no_guardrails"},
+        )
+        final.citations = citations.items
+        elapsed_s = time.perf_counter() - started
+        log.info(
+            "agents.master_flow.done",
+            elapsed_s=round(elapsed_s, 2),
+            flow=core.intent.flow,
+            markdown_len=len(final.markdown),
+            n_citations=len(final.citations),
+            chart_type=viz.chart_type,
+            mode="baseline_no_guardrails",
+        )
+        _emit(
+            on_event,
+            {
+                "type": "final_answer",
+                "elapsed_s": round(elapsed_s, 2),
+                "payload": final.model_dump(),
+            },
+        )
+        return final
+
     _emit(on_event, {"type": "agent_started", "agent": "Fact Checker"})
     is_consistent, divergences = run_fact_check(final.markdown, retrieved)
     if not is_consistent and divergences:

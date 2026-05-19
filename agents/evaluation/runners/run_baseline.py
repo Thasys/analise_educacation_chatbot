@@ -1,31 +1,22 @@
-"""Runner BASELINE — pipeline RAG SEM guardrails.
+"""Runner BASELINE — pipeline RAG SEM guardrails (Fase 2).
 
-STATUS: Fase 1 = stub. Implementacao real na Fase 2 (apos autorizacao).
+Roda `master_flow.run_master(question, no_guardrails=True)` sobre
+todos os itens do golden. Desativa:
 
-O baseline e o denominador da TIA: rodamos o mesmo conjunto de golden
-sobre o pipeline SEM Fact Checker e SEM auto-populate do Retriever
-(ADRs 0006 e 0007 documentam estes guardrails). A diferenca de
-classificacao entre baseline e eduquery e a interceptacao.
+- Retriever auto-populate (ADR 0006)
+- Filtro de DOIs placeholder no Citation Agent
+- Fact Checker pos-Synthesizer + retry (ADR 0007)
 
-Plano de implementacao (Fase 2):
-
-1. Carregar YAMLs de `--golden`.
-2. Para cada item:
-   - Invocar `master_flow.run_master(query=item.query, no_guardrails=True)`
-     (a flag `no_guardrails` ainda nao existe; refactor minimo deve
-     adicionar — discutir com autor antes).
-   - Extrair valor numerico da resposta (regex semelhante ao
-     `check_numeric_consistency`).
-   - Comparar com `expected_value` -> classificar via
-     `hallucination_classifier.classify_response`.
-3. Serializar resultados em JSON na pasta `--output`.
+O JSON de saida e o **denominador** da TIA (itens HALLUCINATED no
+baseline) e o **divisor** dos falsos positivos (itens CORRECT no
+baseline que o EduQuery bloqueia indevidamente).
 
 CLI:
 
-    python -m agents.evaluation.runners.run_baseline \\
+    python -m evaluation.runners.run_baseline \\
         --golden agents/evaluation/golden \\
         --output agents/evaluation/output/baseline.json \\
-        --limit 5    # opcional: sanity check
+        --limit 5     # opcional
 """
 
 from __future__ import annotations
@@ -34,49 +25,28 @@ import argparse
 import sys
 from pathlib import Path
 
+from evaluation.shared.loader import load_golden
+from evaluation.shared.runner import execute
 
-def run(
-    golden_dir: Path,
-    output: Path,
-    *,
-    limit: int | None = None,
-) -> None:
-    """Executa o pipeline baseline sobre todos os itens do golden.
 
-    Raises:
-        NotImplementedError: Fase 1 deixa apenas o stub e a CLI.
-    """
-    # TODO(fase2): carregar YAMLs via `_load_golden(golden_dir)`.
-    # TODO(fase2): para cada item, chamar master_flow com guardrails OFF.
-    # TODO(fase2): classificar resposta e salvar JSON em `output`.
-    raise NotImplementedError(
-        "run_baseline.py: stub Fase 1. Implementar na Fase 2 com "
-        "autorizacao explicita (vide docs/evaluation/prompt-execucao-completo.md)."
+def run(golden_dir: Path, output: Path, *, limit: int | None = None) -> None:
+    items = load_golden(golden_dir)
+    execute(
+        items,
+        mode="baseline",
+        no_guardrails=True,
+        output=output,
+        limit=limit,
     )
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="EduQuery — baseline RAG sem guardrails (Fase 2)."
+        description="EduQuery — baseline RAG sem guardrails."
     )
-    parser.add_argument(
-        "--golden",
-        type=Path,
-        required=True,
-        help="Diretorio com YAMLs de golden datasets.",
-    )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        required=True,
-        help="Arquivo JSON de saida com classificacoes por item.",
-    )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Quantidade maxima de itens (sanity check).",
-    )
+    parser.add_argument("--golden", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--limit", type=int, default=None)
     return parser
 
 

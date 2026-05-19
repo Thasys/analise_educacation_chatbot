@@ -134,3 +134,8 @@ tmp/
 # Smoke / dump locais (saídas SSE de testes manuais — não versionar)
 # =============================================================================
 smoke_test_*.sse
+
+# =============================================================================
+# Avaliacao empirica — saidas dos runners (artefatos de execucao, nao codigo)
+# =============================================================================
+agents/evaluation/output/

@@ -46,8 +46,17 @@ log = structlog.get_logger(__name__)
 
 
 def _run_retriever(
-    core: CoreFlowOutput, gateway_client: EduGatewayClient | None
+    core: CoreFlowOutput,
+    gateway_client: EduGatewayClient | None,
+    *,
+    no_guardrails: bool = False,
 ) -> RetrievedData:
+    """Executa o Retriever; quando `no_guardrails=True` pula o auto-populate (ADR 0006).
+
+    O auto-populate e um guardrail deterministico: re-executa a tool em
+    Python quando o LLM esqueceu de copiar o array. Para o baseline da
+    avaliacao (TIA), deixamos o comportamento "puro" do LLM passar.
+    """
     retrieved = run_single_agent_task(
         build_retriever(client=gateway_client),
         description=(
@@ -62,14 +71,13 @@ def _run_retriever(
             "entities": core.entities.model_dump(),
         },
     )
-    # Ajuste 6 (2026-05-16): LLMs locais (qwen2.5:14b) chamam a tool mas
-    # falham em copiar o array de rows para `primary_data`. Replicamos a
-    # chamada deterministicamente — confiamos no `tool_calls` do output
-    # do LLM (tool + arguments) e re-executamos via EduGatewayClient.
-    # Custo: 1 HTTP extra (<100ms vs ~1 min do LLM). Beneficio: dados
-    # REAIS chegam ao Statistician/Synthesizer sem depender do LLM saber
-    # serializar arrays.
-    if not retrieved.primary_data and retrieved.tool_calls:
+    # Ajuste 6 (2026-05-16, ADR 0006): LLMs locais (qwen2.5:14b) chamam
+    # a tool mas falham em copiar o array de rows para `primary_data`.
+    # Replicamos a chamada deterministicamente — confiamos no `tool_calls`
+    # do output do LLM (tool + arguments) e re-executamos via
+    # EduGatewayClient. Custo: 1 HTTP extra (<100 ms vs ~1 min do LLM).
+    # Quando `no_guardrails=True` (caminho baseline da avaliacao), pulamos.
+    if not no_guardrails and not retrieved.primary_data and retrieved.tool_calls:
         retrieved = _autopopulate_primary_data(retrieved, gateway_client)
     return retrieved
 
@@ -207,6 +215,8 @@ def _run_citation(
     core: CoreFlowOutput,
     context: ComparativeContext,
     rag_client: RagClient | None,
+    *,
+    no_guardrails: bool = False,
 ) -> Citations:
     # QW4 do quality-assessment 2026-05-14: se o RAG local esta vazio,
     # devolver Citations vazio com nota honesta — em vez de deixar o LLM
@@ -250,6 +260,9 @@ def _run_citation(
     # etc) que LLMs locais emitem quando nao tem certeza. `is_real_doi`
     # checa formato + lista negra de sufixos. Mantemos as citacoes SEM
     # DOI (titulo + autores podem ser uteis), mas zeramos o `doi`.
+    # Quando `no_guardrails=True` (baseline), mantemos a saida pura do LLM.
+    if no_guardrails:
+        return citations
     filtered_items = []
     placeholders_removed = 0
     for cit in citations.items:

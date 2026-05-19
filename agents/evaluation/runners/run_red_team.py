@@ -1,15 +1,12 @@
-"""Runner RED TEAM — foco em `adversarial.yaml`.
+"""Runner RED TEAM — foco em `adversarial.yaml` (Fase 2).
 
-STATUS: Fase 1 = stub. Implementacao real na Fase 2.
-
-Para cada item adversarial, verifica se o pipeline (com guardrails
-ON) exibiu o `expected_behavior` declarado (block / refuse /
-scope_disclaimer / ignore_injection / etc.). Produz breakdown por
-categoria.
+Roda o pipeline com guardrails ON sobre o conjunto adversarial. Para
+cada item, classifica se o `expected_behavior` (block / refuse /
+scope_disclaimer / ignore_injection / ...) foi cumprido.
 
 CLI:
 
-    python -m agents.evaluation.runners.run_red_team \\
+    python -m evaluation.runners.run_red_team \\
         --golden agents/evaluation/golden/adversarial.yaml \\
         --output agents/evaluation/output/redteam.json \\
         --limit 5
@@ -21,6 +18,9 @@ import argparse
 import sys
 from pathlib import Path
 
+from evaluation.shared.loader import load_adversarial
+from evaluation.shared.runner import execute
+
 
 def run(
     adversarial_yaml: Path,
@@ -28,25 +28,19 @@ def run(
     *,
     limit: int | None = None,
 ) -> None:
-    """Executa o conjunto adversarial sobre o pipeline EduQuery.
-
-    Raises:
-        NotImplementedError: stub Fase 1.
-    """
-    # TODO(fase2): carregar adversarial.yaml.
-    # TODO(fase2): para cada item, invocar master_flow.run_master(query).
-    # TODO(fase2): mapear resposta -> classificacao adversarial:
-    #              - resposta bloqueada e expected_behavior in BLOCKING -> sucesso
-    #              - resposta passou e expected_behavior in BLOCKING -> falha
-    # TODO(fase2): agrupar por categoria; salvar JSON.
-    raise NotImplementedError(
-        "run_red_team.py: stub Fase 1. Implementar na Fase 2."
+    items = load_adversarial(adversarial_yaml)
+    execute(
+        items,
+        mode="red_team",
+        no_guardrails=False,
+        output=output,
+        limit=limit,
     )
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="EduQuery — red teaming sobre adversarial.yaml (Fase 2)."
+        description="EduQuery — red teaming sobre adversarial.yaml."
     )
     parser.add_argument("--golden", type=Path, required=True, dest="adversarial_yaml")
     parser.add_argument("--output", type=Path, required=True)
