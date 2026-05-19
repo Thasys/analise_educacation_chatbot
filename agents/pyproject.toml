@@ -65,7 +65,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["src*", "evaluation*"]
 
 [tool.ruff]
 line-length = 100

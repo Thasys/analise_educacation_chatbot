@@ -1,0 +1,3 @@
+# Diretorio reservado para gabaritos por agente (Fase 2+).
+# Cada agente CrewAI (profiler, retriever, citation, ...) tera seu
+# proprio YAML com pares (entrada -> saida esperada).
