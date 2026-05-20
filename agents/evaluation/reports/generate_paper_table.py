@@ -386,6 +386,104 @@ def render_markdown(
             f"| {cat} | {n} | {b['blocked']} | {b['hallucinated']} | {_fmt_pct(rate)} |\n"
         )
 
+    # ---- Tabela 5: transicoes in-scope (item-a-item) -----------------
+    parts.append(
+        "\n## Tabela 5 — Transicoes in-scope (item-a-item)\n\n"
+        "Mostra exatamente quais perguntas o EduQuery interceptou e quais "
+        "deixou passar. Padrao: interceptacao ocorre quando indicador + ano "
+        "cabem no recorte dos marts atuais.\n\n"
+    )
+    parts.append(
+        "| id | baseline | EduQuery | Transicao | Query (truncada) |\n"
+        "|---|---|---|---|---|\n"
+    )
+    base_by_id = {it["id"]: it for it in baseline_data["items"]}
+    edu_by_id = {it["id"]: it for it in eduquery_data["items"]}
+    for item_id, b in base_by_id.items():
+        if classify_scope(b) != "in_scope":
+            continue
+        e = edu_by_id.get(item_id, {})
+        bc = b["classification"]
+        ec = e.get("classification", "MISSING")
+        if bc == "hallucinated":
+            transicao = (
+                "**INTERCEPTADO**" if ec in ("correct", "blocked") else "nao interceptado"
+            )
+        else:
+            transicao = f"(ja era {bc})"
+        q = (b.get("query") or "").replace("|", " ")[:60]
+        parts.append(f"| {item_id} | {bc} | {ec} | {transicao} | {q}... |\n")
+
+    # ---- Analise: por que esse numero? -------------------------------
+    parts.append(
+        "\n## Analise — por que esse valor de TIA?\n\n"
+        "A TIA in-scope mede, na pratica, a **fracao de alucinacoes do "
+        "baseline cuja pergunta cabe no recorte dos marts atuais** "
+        "(`GASTO_EDU_PIB` em `mart_br_vs_ocde__gasto_educacao_timeseries`, "
+        "`LITERACY_15M` em `mart_alfabetizacao__latam_2020s`). Quando a "
+        "pergunta cai dentro do recorte, o **auto-populate determinístico "
+        "do Retriever** (ADR 0006) injeta o valor canônico do mart no "
+        "contexto do Synthesizer — e o sistema acerta. Fora do recorte "
+        "(ano ausente, indicador derivado), o auto-populate falha e o "
+        "Synthesizer alucina.\n\n"
+        "**A TIA reflete, portanto, a fronteira de cobertura do lakehouse, "
+        "nao a qualidade dos guardrails em abstrato.**\n\n"
+    )
+
+    # ---- Caminhos para aumentar (ROI) --------------------------------
+    parts.append(
+        "## Caminhos para aumentar a TIA (ordenados por ROI)\n\n"
+        "| # | Intervencao | Impacto estimado | Custo |\n"
+        "|---|---|---|---|\n"
+        "| 1 | **Implementar PISA/TIMSS/PIRLS com Plausible Values + BRR** "
+        "(`r_scripts/` ja tem placeholders) | +30-40 itens viram in-scope; "
+        "TIA in-scope potencialmente ~70%+ | Alto (2-4 semanas) |\n"
+        "| 2 | **Expandir cobertura temporal dos marts atuais** "
+        "(gasto pre-2010, analfabetismo 2019) | F-016, C-011 viram "
+        "interceptaveis | Baixo (1-2 dias) |\n"
+        "| 3 | **Adicionar `mart_gasto_per_aluno` (USD PPP)** | F-032, "
+        "C-005 viram interceptaveis | Medio (3-5 dias) |\n"
+        "| 4 | **Fact Checker LLM-based** (MP4 do quality plan, ADR 0007 "
+        "Debito Tecnico) | Pega direcionais errados ('acima/abaixo "
+        "invertido'); +10-15% in-scope | Medio (1 semana) |\n"
+        "| 5 | **JSON Schema strict via Ollama `format=<schema>`** (LP3) | "
+        "Synthesizer nao pode mais 'prosa intermediaria' inventar numeros | "
+        "Medio |\n"
+        "| 6 | **Popular ChromaDB com referencias reais** (RAG atualmente "
+        "vazio -> 0 DOIs reais recuperados) | DOI recall sobe; melhora "
+        "citacoes | Medio |\n"
+        "| 7 | **Self-consistency n=3 com voto majoritario** (LP2) | "
+        "Reduz variancia LLM; melhora ~5% | Alto (3x custo de tokens) |\n\n"
+        "**Maior alavanca: #1 + #2.** Se 30 itens PISA viram in-scope e 50% "
+        "deles forem interceptados, TIA in-scope sobe para ~65-75%.\n\n"
+    )
+
+    # ---- Implicacoes -------------------------------------------------
+    parts.append(
+        "## Implicacoes do valor obtido\n\n"
+        "**Para o paper (Secao 5 — Discussao):**\n"
+        "- O sistema **nao e fonte primaria**; e assistente de exploracao. "
+        "Usuario academico ainda deve checar fontes.\n"
+        "- ~44% das alucinacoes in-scope passam -> para usos criticos "
+        "(publicacao, politica publica), revisao humana e necessaria.\n"
+        "- A camada de guardrails deterministicos e **necessaria mas nao "
+        "suficiente** — confirmando o argumento do paper de que LLM puro "
+        "RAG e insuficiente sem verificacao.\n\n"
+        "**Para arquitetura (proximas iteracoes):**\n"
+        "- O ROI dos guardrails e real (6x acuracia), validando o "
+        "investimento no DRY refactor + ADRs 0006/0007.\n"
+        "- A maior alavanca nao e melhorar guardrails — e **ampliar a "
+        "cobertura do lakehouse** (#1 e #2 da tabela acima).\n"
+        "- Lei de Conway aplicada: a TIA reflete a fronteira de 'o que "
+        "esta modelado nos marts'.\n\n"
+        "**Para revisao SBIE:**\n"
+        "- O par 'TIA estendida in-scope 55,6% + acuracia 10%->60%' e mais "
+        "defensavel que apresentar so um numero.\n"
+        "- Revisores TPIE devem aceitar se o paper for explicito sobre "
+        "escopo + reportar limitacao corretamente (ver "
+        "`docs/evaluation/limitations.md`).\n\n"
+    )
+
     # ---- Insercao no artigo ------------------------------------------
     parts.append("\n## Para o resumo + abstract\n\n")
     parts.append(

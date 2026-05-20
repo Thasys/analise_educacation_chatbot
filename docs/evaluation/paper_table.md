@@ -51,6 +51,60 @@ Reportamos as duas. **O resumo + abstract usam a TIA estendida** (captura o efei
 | source_spoofing | 3 | 0 | 3 | 0.0% |
 | year_confusion | 3 | 0 | 2 | 0.0% |
 
+## Tabela 5 — Transicoes in-scope (item-a-item)
+
+Mostra exatamente quais perguntas o EduQuery interceptou e quais deixou passar. Padrao: interceptacao ocorre quando indicador + ano cabem no recorte dos marts atuais.
+
+| id | baseline | EduQuery | Transicao | Query (truncada) |
+|---|---|---|---|---|
+| F-015 | hallucinated | correct | **INTERCEPTADO** | Qual a taxa de analfabetismo de pessoas de 15 anos ou mais n... |
+| F-016 | hallucinated | hallucinated | nao interceptado | Qual a taxa de analfabetismo de pessoas de 15 anos ou mais n... |
+| F-017 | hallucinated | correct | **INTERCEPTADO** | Qual o gasto publico em educacao como % do PIB no Brasil em ... |
+| F-018 | hallucinated | correct | **INTERCEPTADO** | Qual a media OCDE de gasto publico em educacao como % do PIB... |
+| F-032 | hallucinated | hallucinated | nao interceptado | Qual o gasto medio por aluno na educacao primaria no Brasil ... |
+| C-001 | hallucinated | correct | **INTERCEPTADO** | Compare o gasto publico em educacao como % do PIB entre Bras... |
+| C-005 | hallucinated | hallucinated | nao interceptado | Compare o gasto por aluno na educacao primaria (USD PPP) ent... |
+| C-010 | hallucinated | correct | **INTERCEPTADO** | Compare o gasto publico em educacao como % do PIB entre Bras... |
+| C-011 | hallucinated | hallucinated | nao interceptado | Compare a taxa de analfabetismo de 15+ entre Brasil em 2019 ... |
+| C-017 | correct | correct | (ja era correct) | Compare o gasto publico em educacao como % do PIB entre Bras... |
+
+## Analise — por que esse valor de TIA?
+
+A TIA in-scope mede, na pratica, a **fracao de alucinacoes do baseline cuja pergunta cabe no recorte dos marts atuais** (`GASTO_EDU_PIB` em `mart_br_vs_ocde__gasto_educacao_timeseries`, `LITERACY_15M` em `mart_alfabetizacao__latam_2020s`). Quando a pergunta cai dentro do recorte, o **auto-populate determinístico do Retriever** (ADR 0006) injeta o valor canônico do mart no contexto do Synthesizer — e o sistema acerta. Fora do recorte (ano ausente, indicador derivado), o auto-populate falha e o Synthesizer alucina.
+
+**A TIA reflete, portanto, a fronteira de cobertura do lakehouse, nao a qualidade dos guardrails em abstrato.**
+
+## Caminhos para aumentar a TIA (ordenados por ROI)
+
+| # | Intervencao | Impacto estimado | Custo |
+|---|---|---|---|
+| 1 | **Implementar PISA/TIMSS/PIRLS com Plausible Values + BRR** (`r_scripts/` ja tem placeholders) | +30-40 itens viram in-scope; TIA in-scope potencialmente ~70%+ | Alto (2-4 semanas) |
+| 2 | **Expandir cobertura temporal dos marts atuais** (gasto pre-2010, analfabetismo 2019) | F-016, C-011 viram interceptaveis | Baixo (1-2 dias) |
+| 3 | **Adicionar `mart_gasto_per_aluno` (USD PPP)** | F-032, C-005 viram interceptaveis | Medio (3-5 dias) |
+| 4 | **Fact Checker LLM-based** (MP4 do quality plan, ADR 0007 Debito Tecnico) | Pega direcionais errados ('acima/abaixo invertido'); +10-15% in-scope | Medio (1 semana) |
+| 5 | **JSON Schema strict via Ollama `format=<schema>`** (LP3) | Synthesizer nao pode mais 'prosa intermediaria' inventar numeros | Medio |
+| 6 | **Popular ChromaDB com referencias reais** (RAG atualmente vazio -> 0 DOIs reais recuperados) | DOI recall sobe; melhora citacoes | Medio |
+| 7 | **Self-consistency n=3 com voto majoritario** (LP2) | Reduz variancia LLM; melhora ~5% | Alto (3x custo de tokens) |
+
+**Maior alavanca: #1 + #2.** Se 30 itens PISA viram in-scope e 50% deles forem interceptados, TIA in-scope sobe para ~65-75%.
+
+## Implicacoes do valor obtido
+
+**Para o paper (Secao 5 — Discussao):**
+- O sistema **nao e fonte primaria**; e assistente de exploracao. Usuario academico ainda deve checar fontes.
+- ~44% das alucinacoes in-scope passam -> para usos criticos (publicacao, politica publica), revisao humana e necessaria.
+- A camada de guardrails deterministicos e **necessaria mas nao suficiente** — confirmando o argumento do paper de que LLM puro RAG e insuficiente sem verificacao.
+
+**Para arquitetura (proximas iteracoes):**
+- O ROI dos guardrails e real (6x acuracia), validando o investimento no DRY refactor + ADRs 0006/0007.
+- A maior alavanca nao e melhorar guardrails — e **ampliar a cobertura do lakehouse** (#1 e #2 da tabela acima).
+- Lei de Conway aplicada: a TIA reflete a fronteira de 'o que esta modelado nos marts'.
+
+**Para revisao SBIE:**
+- O par 'TIA estendida in-scope 55,6% + acuracia 10%->60%' e mais defensavel que apresentar so um numero.
+- Revisores TPIE devem aceitar se o paper for explicito sobre escopo + reportar limitacao corretamente (ver `docs/evaluation/limitations.md`).
+
+
 ## Para o resumo + abstract
 
 O placeholder `[X\%]` em `main.tex` (resumo e abstract) deve ser substituido pelo valor **TIA estendida in-scope** (recompensa tanto bloqueios quanto correcoes silenciosas, e ignora itens out_of_scope que ambos modos respondem honestamente):

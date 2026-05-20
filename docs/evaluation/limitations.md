@@ -177,4 +177,93 @@ primaria** antes do run oficial.
 
 ---
 
-**Atualizado em:** 2026-05-19 (final da Fase 3).
+## 5. Analise do resultado 55,6% (TIA estendida in-scope)
+
+### O que aconteceu, item-a-item
+
+Dos 10 itens in-scope, 9 foram alucinados pelo baseline RAG. O EduQuery
+interceptou 5 deles (viraram CORRECT) — **TIA = 5/9 = 55,6%**.
+
+| id    | Indicador / ano | Baseline | EduQuery | Auto-populate disponivel? |
+|-------|----------------|----------|----------|---------------------------|
+| F-015 | analfabetismo BR 2022 | hallucinated | **correct** | sim — `mart_alfabetizacao__latam_2020s` cobre |
+| F-016 | analfabetismo BR 2019 | hallucinated | hallucinated | nao — ano fora do recorte do mart |
+| F-017 | gasto BR 2021 | hallucinated | **correct** | sim — `mart_br_vs_ocde__gasto_educacao_timeseries` |
+| F-018 | gasto OCDE 2021 | hallucinated | **correct** | sim |
+| F-032 | gasto/aluno USD PPP BR 2021 | hallucinated | hallucinated | nao — USD PPP nao e indicador canonico |
+| C-001 | comparacao gasto BR vs OCDE 2021 | hallucinated | **correct** | sim |
+| C-005 | comparacao gasto/aluno BR/FIN/KOR | hallucinated | hallucinated | nao — USD PPP fora |
+| C-010 | comparacao gasto BR/USA/MEX 2020 | hallucinated | **correct** | sim |
+| C-011 | analfabetismo 2019 vs 2022 | hallucinated | hallucinated | nao — 2019 fora do recorte |
+| C-017 | gasto BR vs FIN 2020 | correct | correct | (ja era correct) |
+
+### Por que esse valor especifico
+
+A TIA in-scope mede, na pratica, a **fracao das alucinacoes do baseline
+cuja pergunta cabe no recorte exato dos marts atuais**. Quando a pergunta
+cai dentro, o auto-populate determinístico do Retriever ([ADR 0006](../adrs/0006-retriever-autopopulate.md))
+injeta o valor canonico do mart no contexto do Synthesizer — e o sistema
+acerta. Fora do recorte (ano ausente, indicador derivado como USD PPP),
+o auto-populate falha e o Synthesizer alucina.
+
+**A TIA reflete a fronteira de cobertura do lakehouse, nao a qualidade
+dos guardrails em abstrato.**
+
+### Aceitabilidade
+
+- **6x melhora sobre baseline** (10% -> 60% acuracia in-scope): defensavel
+  metodologicamente.
+- **44% das alucinacoes passam**: sistema **nao e fonte primaria**;
+  usuario academico deve checar fontes citadas.
+- **Banda da literatura RAG em educacao**: 40-70% acuracia agregada.
+  EduQuery (60%) cai no meio dessa banda — esperado para sistema novo
+  com escopo limitado.
+- **Risco de leitura ingenua**: revisor que ler "55,6%" sem o contexto
+  pode achar baixo. A subsecao 3.4 (Avaliacao) do artigo precisa deixar
+  explicito que a metrica e restrita aos indicadores cobertos.
+
+### Caminhos para aumentar a TIA (ordenados por ROI)
+
+| # | Intervencao | Impacto estimado | Custo |
+|---|---|---|---|
+| 1 | **Implementar PISA/TIMSS/PIRLS com Plausible Values + BRR** ([`r_scripts/`](../../r_scripts/) ja tem placeholders) | +30-40 itens viram in-scope; TIA potencialmente ~70%+ | Alto (2-4 semanas) |
+| 2 | **Expandir cobertura temporal dos marts atuais** (gasto pre-2010, analfabetismo 2019) | F-016, C-011 viram interceptaveis | Baixo (1-2 dias) |
+| 3 | **Adicionar `mart_gasto_per_aluno` (USD PPP)** | F-032, C-005 viram interceptaveis | Medio (3-5 dias) |
+| 4 | **Fact Checker LLM-based** (MP4 do quality plan, [ADR 0007 Debito Tecnico](../adrs/0007-fact-checker-post-synthesis.md)) | Pega direcionais errados; +10-15% in-scope | Medio (1 semana) |
+| 5 | **JSON Schema strict via Ollama `format=<schema>`** (LP3) | Synthesizer nao pode mais "prosa intermediaria" inventar numeros | Medio |
+| 6 | **Popular ChromaDB com referencias reais** (RAG atualmente vazio -> 0 DOIs reais recuperados) | DOI recall sobe; melhora citacoes | Medio |
+| 7 | **Self-consistency n=3 com voto majoritario** (LP2) | Reduz variancia LLM; melhora ~5% | Alto (3x custo de tokens) |
+
+**Maior alavanca: #1 + #2.** Se 30 itens PISA viram in-scope e 50%
+deles forem interceptados, TIA in-scope sobe para ~65-75%.
+
+### Implicacoes
+
+**Para o paper (Secao 5 — Discussao):**
+
+- O sistema **nao e fonte primaria**; e assistente de exploracao.
+- ~44% das alucinacoes in-scope passam -> para usos criticos
+  (publicacao, politica publica), revisao humana e necessaria.
+- A camada de guardrails deterministicos e **necessaria mas nao
+  suficiente** — confirmando o argumento do paper de que LLM puro RAG
+  e insuficiente sem verificacao.
+
+**Para arquitetura (proximas iteracoes):**
+
+- O ROI dos guardrails e real (6x acuracia), validando o investimento
+  no DRY refactor + ADRs 0006/0007.
+- A maior alavanca nao e melhorar guardrails — e **ampliar a cobertura
+  do lakehouse** (#1 e #2 da tabela acima).
+- Lei de Conway aplicada: a TIA reflete a fronteira de "o que esta
+  modelado nos marts".
+
+**Para revisao SBIE:**
+
+- O par "TIA estendida in-scope 55,6% + acuracia 10%->60%" e mais
+  defensavel que apresentar so um numero.
+- Revisores TPIE devem aceitar se o paper for explicito sobre escopo +
+  reportar limitacao corretamente (este documento).
+
+---
+
+**Atualizado em:** 2026-05-20 (analise pos-bateria).
