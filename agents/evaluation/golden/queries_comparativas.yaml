@@ -41,7 +41,7 @@
   expected_oecd_avg: 472
   expected_other: null
   year: 2022
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   sources_required: ["OECD"]
   primary_source: "OECD PISA 2022 Results, Volume I"
@@ -55,7 +55,7 @@
   expected_oecd_avg: 476
   expected_other: null
   year: 2022
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   sources_required: ["OECD"]
   primary_source: "OECD PISA 2022 Results"
@@ -69,7 +69,7 @@
   expected_oecd_avg: 485
   expected_other: null
   year: 2022
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   sources_required: ["OECD"]
   primary_source: "OECD PISA 2022 Results"
@@ -129,7 +129,7 @@
   expected_other:
     BRA_2018: 384
   year: 2022
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   sources_required: ["OECD"]
   primary_source: "OECD PISA 2018 + 2022 Results"
@@ -144,7 +144,7 @@
   expected_other:
     BR_SUDESTE: 6.2
   year: 2021
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "indice IDEB"
   sources_required: ["INEP"]
   primary_source: "INEP, IDEB 2021 por regiao geografica"
@@ -191,7 +191,7 @@
     CHL: 412
     URY: 409
   year: 2022
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   sources_required: ["OECD"]
   primary_source: "OECD PISA 2022 Results, Country Notes LATAM"
@@ -250,7 +250,7 @@
   expected_other:
     FIN: 484
   year: 2022
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   sources_required: ["OECD"]
   primary_source: "OECD PISA 2022 Results"
@@ -310,7 +310,7 @@
     ESP: 474
     ITA: 482
   year: 2022
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   sources_required: ["OECD"]
   primary_source: "OECD PISA 2022 Results, Country Notes"

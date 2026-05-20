@@ -266,4 +266,107 @@ deles forem interceptados, TIA in-scope sobe para ~65-75%.
 
 ---
 
-**Atualizado em:** 2026-05-20 (analise pos-bateria).
+## 6. Calibracao da tolerancia numerica por tipo de indicador
+
+### Estado original
+
+O `tolerance_pct: 5` aplicado no esqueleto do plano mestre era um
+**default generico** — adequado para um sanity check inicial, mas
+folgado demais para indicadores oficiais como PISA e IDEB, cujos
+valores oficiais sao reportados com precisao alta:
+
+| Referencia (PISA Math) | Valor |
+|---|---:|
+| Margem de erro padrao (SE) do PISA Brasil 2022 | ~2,7 pts |
+| Diferenca estatisticamente significativa entre paises | ~10 pts |
+| ~1 ano de aprendizagem (convencao OECD) | ~25-30 pts |
+| **Tolerancia 5% sobre 379** | **~19 pts (~70% de 1 ano)** |
+
+A tolerancia de 5% sobre a nota PISA equivale a quase 1 ano de
+aprendizagem — uma diferenca metodologicamente **relevante** em
+estudos de educacao comparada. Em itens com `tolerance_pct: 5`, o
+sistema seria classificado como CORRECT respondendo qualquer valor
+entre `[360; 398]` para um gabarito de `379`.
+
+### Calibracao adotada (2026-05-20)
+
+`evaluation/shared/recalibrate_tolerances.py` foi executado para
+apertar a tolerancia de **21 itens PISA/IDEB**:
+
+| Tipo de indicador | Tolerancia anterior | Tolerancia atual | Justificativa |
+|---|:-:|:-:|---|
+| Notas PISA (valores oficiais OECD) | 5% | **2%** | ~8 pts; proximo do limiar de significancia entre paises (~10 pts). |
+| IDEB (indice INEP, 1 casa decimal) | 5% | **2%** | ~0,12 pts; precisao alta do indicador. |
+| Medias OCDE PISA | 3% | (mantido) | Ja estrito; valor agregado tem variabilidade menor. |
+| Singapura PISA (#1 mundial) | 3% | (mantido) | Ja estrito. |
+| Analfabetismo IBGE PNAD | 5% | (mantido) | Justificavel; erro amostral PNAD ~0,3 pp. |
+| Gasto % do PIB | 10% | (mantido) | Justificavel; fontes divergem (INEP/SIOPE vs WB vs OCDE). |
+| Conclusao EM (OCDE EAG) | 5-10% | (mantido) | OK; variabilidade metodologica entre paises. |
+| Escolaridade media | 10% | (mantido) | OK; definicao varia entre fontes. |
+| Aluno-professor ratio | 10% | (mantido) | OK; depende de definicao de "professor ativo". |
+| Populacao escolar (estimativas) | 5% | (mantido) | OK; arredondamento. |
+| Docentes (Censo Escolar) | 10% | (mantido) | OK; categorias variam. |
+| Gasto/aluno USD PPP | 15% | (mantido) | OK; conversao PPP volatil. |
+| #paises PISA (contagem) | 2% | (mantido) | Ja estrito. |
+
+**21 itens recalibrados:** F-001, F-002, F-003, F-007, F-008, F-009,
+F-010, F-011, F-012, F-013, F-014, F-026, F-027, C-002, C-003, C-004,
+C-008, C-009, C-012, C-016, C-020.
+
+### Impacto na TIA reportada (55,6%)
+
+**Nenhum.** Razao: os 21 itens recalibrados sao todos PISA/IDEB que
+caem em `out_of_scope` (PISA/TIMSS/PIRLS estao com
+`plausible_values_pending` — Secao 1 deste documento; IDEB nao tem
+mart ainda). Nestes itens:
+
+- **Baseline**: sistema responde "indicador nao disponivel" -> 
+  `actual_value=None` -> `HALLUCINATED`.
+- **EduQuery**: mesma resposta -> mesma classificacao.
+
+Como `actual_value=None` em ambos os modos, **a tolerancia (qualquer
+que seja) nao altera a classificacao** — sem numero proposto, nao ha
+o que tolerar. A TIA in-scope de 55,6% e a TIA bruta de 23,0%
+permanecem identicas.
+
+### Por que o ajuste e relevante mesmo sem mudar a TIA atual
+
+A calibracao e **trabalho preventivo** para o proximo ciclo
+(Secao 8.2 da [paper_table.md](./paper_table.md), caminho ROI #1).
+Quando PISA for implementado com Plausible Values + BRR/Jackknife
+(`r_scripts/` ja tem placeholders), os 21 itens entrarao em
+`in_scope` e o sistema proporia valores numericos concretos —
+a tolerancia entao **importara**:
+
+- Com 5%: respostas "Brasil PISA Math 2022 = 397" seriam aceitas
+  (gabarito 379, gap de 18 pts = quase 1 ano de aprendizagem).
+  Inflaria a TIA artificialmente.
+- Com 2%: respostas seriam aceitas em `[371,4; 386,6]` — apenas
+  proximo do valor real. Honesto.
+
+A calibracao protege a integridade da metrica **antes** que ela seja
+medida com PISA real, evitando a tentacao retroativa de "ajustar a
+tolerancia para o numero ficar melhor".
+
+### Implicacao no documento principal
+
+Esta calibracao **nao altera o numero 55,6% reportado no resumo +
+abstract do artigo SBIE 2026**. Ela e documentada aqui como
+transparencia metodologica e como pre-requisito para revisao final
+(notificacao 2026-07-08), quando o n>=3 e a verificacao item-a-item
+contra fontes primarias serao executados.
+
+### Trabalho futuro
+
+- **Antes do proximo run** (com PISA implementado): rodar
+  `recalibrate_tolerances.py` em modo `--strict` (todos os
+  indicadores oficiais para 1-2%, indicadores com amostragem
+  para 5%).
+- Cross-checar cada `expected_value` contra a fonte primaria,
+  marcando `_verified: true`.
+- Documentar a tolerancia adotada em cada `tipo_de_indicador` numa
+  tabela canonica no [`plano-avaliacao-empirica.md`](./plano-avaliacao-empirica.md).
+
+---
+
+**Atualizado em:** 2026-05-20 (analise pos-bateria + calibracao de tolerancias).

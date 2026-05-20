@@ -19,7 +19,7 @@
 - id: F-001
   query: "Qual foi a nota media do Brasil em Matematica no PISA 2022?"
   expected_value: 379
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   primary_source: "OECD PISA 2022 Results (Volume I), Table I.B1.4.1"
   doi: "10.1787/53f23881-en"
@@ -29,7 +29,7 @@
 - id: F-002
   query: "Qual foi a nota media do Brasil em Leitura no PISA 2022?"
   expected_value: 410
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   primary_source: "OECD PISA 2022 Results (Volume I), Table I.B1.4.2"
   doi: "10.1787/53f23881-en"
@@ -39,7 +39,7 @@
 - id: F-003
   query: "Qual foi a nota media do Brasil em Ciencias no PISA 2022?"
   expected_value: 403
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   primary_source: "OECD PISA 2022 Results (Volume I), Table I.B1.4.3"
   doi: "10.1787/53f23881-en"
@@ -79,7 +79,7 @@
 - id: F-007
   query: "Qual foi a nota do Brasil em Matematica no PISA 2018?"
   expected_value: 384
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   primary_source: "OECD PISA 2018 Results (Volume I), Country Note Brazil"
   doi: "10.1787/5f07c754-en"
@@ -89,7 +89,7 @@
 - id: F-008
   query: "Qual foi a nota da Finlandia em Matematica no PISA 2022?"
   expected_value: 484
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   primary_source: "OECD PISA 2022 Results, Country Note Finland"
   doi: "10.1787/53f23881-en"
@@ -99,7 +99,7 @@
 - id: F-009
   query: "Qual foi a nota do Japao em Matematica no PISA 2022?"
   expected_value: 536
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   primary_source: "OECD PISA 2022 Results, Country Note Japan"
   doi: "10.1787/53f23881-en"
@@ -109,7 +109,7 @@
 - id: F-010
   query: "Qual foi a nota dos Estados Unidos em Matematica no PISA 2022?"
   expected_value: 465
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   primary_source: "OECD PISA 2022 Results, Country Note USA"
   doi: "10.1787/53f23881-en"
@@ -119,7 +119,7 @@
 - id: F-011
   query: "Qual o IDEB dos anos iniciais do ensino fundamental no Brasil em 2021?"
   expected_value: 5.8
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "indice IDEB"
   primary_source: "INEP, Resultados IDEB 2021 (rede publica + privada)"
   doi: null
@@ -129,7 +129,7 @@
 - id: F-012
   query: "Qual o IDEB dos anos finais do ensino fundamental no Brasil em 2021?"
   expected_value: 5.1
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "indice IDEB"
   primary_source: "INEP, Resultados IDEB 2021"
   doi: null
@@ -139,7 +139,7 @@
 - id: F-013
   query: "Qual o IDEB do ensino medio no Brasil em 2021?"
   expected_value: 4.2
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "indice IDEB"
   primary_source: "INEP, Resultados IDEB 2021"
   doi: null
@@ -149,7 +149,7 @@
 - id: F-014
   query: "Qual o IDEB dos anos iniciais do ensino fundamental no Brasil em 2019?"
   expected_value: 5.9
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "indice IDEB"
   primary_source: "INEP, Resultados IDEB 2019"
   doi: null
@@ -269,7 +269,7 @@
 - id: F-026
   query: "Qual foi a nota da Coreia do Sul em Matematica no PISA 2022?"
   expected_value: 527
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   primary_source: "OECD PISA 2022 Results, Country Note Korea"
   doi: "10.1787/53f23881-en"
@@ -279,7 +279,7 @@
 - id: F-027
   query: "Qual foi a nota da Alemanha em Ciencias no PISA 2022?"
   expected_value: 492
-  tolerance_pct: 5
+  tolerance_pct: 2
   unit: "pontos PISA"
   primary_source: "OECD PISA 2022 Results, Country Note Germany"
   doi: "10.1787/53f23881-en"
