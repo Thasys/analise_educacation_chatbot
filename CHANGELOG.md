@@ -9,6 +9,23 @@ podem aparecer em minor releases.
 
 ### Added
 
+- **2026-05-19** — Avaliação empírica EduQuery (Fases 1+2+3 do
+  [plano-avaliacao-empirica.md](docs/evaluation/plano-avaliacao-empirica.md)):
+  - Pacote `agents/evaluation/` com 84 itens golden (32 factuais + 22
+    comparativos + 30 adversariais em 9 categorias), 5 métricas puras
+    (`numeric_accuracy`, `doi_validity`, `source_coverage`,
+    `hallucination_classifier`, `guardrails_efficacy`), 3 runners
+    (baseline / eduquery / red_team) + `generate_paper_table.py`.
+  - 89 unit tests dedicados (todos verdes), 216/216 testes na suite
+    afetada.
+  - **Refactor mínimo invasivo**: `master_flow.run_master(...,
+    no_guardrails: bool = False)` + propagação para
+    `_run_retriever`/`_run_citation`. Default `False`; só os runners
+    de baseline ativam a flag.
+  - Limitações descobertas e documentadas em
+    [`docs/evaluation/limitations.md`](docs/evaluation/limitations.md):
+    PISA fora dos marts (`plausible_values_pending`), incompatibilidade
+    Gemini × CrewAI Flow, n=1 por prazo SBIE 2026-05-20.
 - **2026-05-16** — Reorganização da documentação ([D1-D4 de docs](docs/refactor/dry-pass-2026-05.md)):
   - `docs/operations/` com 4 guias vivos: running-the-system, data-pipeline,
     models-and-providers, monitoring-and-debugging.

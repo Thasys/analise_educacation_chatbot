@@ -65,6 +65,14 @@ def _ensure_anthropic_env() -> None:
     _ensure_provider_env()
 
 
+# Providers que devem usar o fallback LiteLLM em vez do native SDK do CrewAI.
+# Gemini native (google-genai) tem incompatibilidade com CrewAI Flow em
+# contexto sincrono: dispara `RuntimeError: no running event loop` e devolve
+# `Invalid response from LLM call - None or empty`. LiteLLM fallback resolve.
+# Ver `docs/evaluation/limitations.md` Secao 2.
+_FORCE_LITELLM_PROVIDERS = frozenset({"gemini"})
+
+
 def make_llm(role: LLMRole, *, temperature: float | None = None) -> LLM:
     """Constroi um `crewai.LLM` para o papel solicitado.
 
@@ -81,4 +89,8 @@ def make_llm(role: LLMRole, *, temperature: float | None = None) -> LLM:
     }
     if settings.llm_api_base:
         kwargs["base_url"] = settings.llm_api_base
+    if settings.llm_provider in _FORCE_LITELLM_PROVIDERS:
+        # Pula o native provider (google-genai) que tem bug async com CrewAI
+        # Flow. LiteLLM funciona corretamente.
+        kwargs["is_litellm"] = True
     return LLM(**kwargs)
