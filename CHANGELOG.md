@@ -9,6 +9,31 @@ podem aparecer em minor releases.
 
 ### Added
 
+- **2026-05-21** — IDEB Brasil nos marts Gold (Fase A do
+  [prompt-implementar-pisa-ideb.md](docs/evaluation/prompt-implementar-pisa-ideb.md)):
+  - Coletor `data_pipeline/src/scripts/collect_ideb.py` baixa 6
+    planilhas municipais (3 etapas × ciclos 2019 + 2021) do INEP
+    diretamente para `data/bronze/inep/ideb_*/<ciclo>/`. Suporte SSL
+    via `truststore` (cadeia RNP ICPEdu ausente do bundle Mozilla).
+  - dbt: `stg_inep_ideb` (UNPIVOT wide→long de `VL_OBSERVADO_*` e
+    `VL_PROJECAO_*` via DuckDB), `int_ideb__br_serie_historica` e
+    `int_indicadores__ideb` (schema canônico), `mart_ideb__br_serie_historica`.
+    Cobertura: AI/AF 2005-2021; EM 2017-2021. 54 dbt tests verdes.
+  - `IndicatorId` enum recebe `IDEB_AI`, `IDEB_AF`, `IDEB_EM` em
+    `agents/src/schemas.py` e `api/src/schemas/common.py`. SourceTag
+    ganha `inep`. Prompts do Profiler/Retriever/Statistician + descrição
+    da tool `data_timeseries` atualizados.
+  - Fix em `api/src/services/timeseries_service.py`: filtro por
+    `indicator_id` (necessário porque `int_indicadores__ideb` empilha
+    3 indicadores na mesma tabela; antes o serviço assumia 1:1).
+  - Dev: Python pin 3.12 + `dbt-core`/`dbt-duckdb` em `[dev]` extras
+    do `data_pipeline/pyproject.toml`.
+  - **Caveat metodológico documentado**: o `int_ideb__br_serie_historica`
+    usa média simples por município (rede 'Pública'), sem ponderação
+    por matrículas e sem rede privada. Resultado fica 0.15-0.25pp
+    abaixo do IDEB nacional oficial (5.57 vs 5.7 para AI 2021). Goldens
+    F-011/F-012/F-014 podem falhar em `tolerance_pct=2`; iteração
+    futura: ponderação via Censo Escolar.
 - **2026-05-19** — Avaliação empírica EduQuery (Fases 1+2+3 do
   [plano-avaliacao-empirica.md](docs/evaluation/plano-avaliacao-empirica.md)):
   - Pacote `agents/evaluation/` com 84 itens golden (32 factuais + 22

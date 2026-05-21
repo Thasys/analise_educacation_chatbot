@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: mart_ideb__br_serie_historica
+    description: >
+      Mart Gold do IDEB Brasil, serie historica por etapa.
+      Indicadores: IDEB_AI (anos iniciais), IDEB_AF (anos finais),
+      IDEB_EM (ensino medio). Consumido pelos agentes via
+      `/api/data/timeseries` e `/api/data/compare`. Cobertura: AI/AF
+      2005-2021; EM 2017-2021. Calculo: media simples por municipio
+      na rede 'Publica'.
+    config:
+      tags: ['gold', 'avaliacoes']
+    columns:
+      - name: country_iso3
+        description: "ISO-3 do pais ('BRA' por enquanto)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['BRA']
+      - name: indicator
+        description: "Indicador canonico (IDEB_AI/IDEB_AF/IDEB_EM)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['IDEB_AI', 'IDEB_AF', 'IDEB_EM']
+      - name: year
+        description: "Ano da observacao."
+        tests:
+          - not_null
+          - accepted_range:
+              arguments:
+                min_value: 2005
+                max_value: 2030
+      - name: value
+        description: "Valor do IDEB observado (escala 0-10)."
+        tests:
+          - not_null
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 10
+      - name: meta_projetada
+        description: "Meta IDEB projetada pelo INEP para o ano (NULL para anos sem projecao)."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 10
+      - name: n_municipios_observados
+        description: "Numero de municipios da rede publica que contribuiram para o agregado."
+        tests:
+          - not_null
+      - name: source
+        description: "Fonte do dado (sempre 'inep')."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['inep']
+      - name: ciclo_divulgacao_origem
+        description: "Ciclo de divulgacao mais recente que contribuiu para esta linha."

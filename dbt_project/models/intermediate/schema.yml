@@ -134,6 +134,64 @@ models:
               arguments:
                 values: ["%"]
 
+  - name: int_indicadores__ideb
+    description: >
+      IDEB (Indice de Desenvolvimento da Educacao Basica) para Brasil,
+      em formato canonico de indicador. Indicadores: IDEB_AI (anos
+      iniciais), IDEB_AF (anos finais), IDEB_EM (ensino medio).
+      Cobertura: AI/AF 2005-2021; EM 2017-2021. Granularidade: pais
+      (BRA); UF/municipio em mart proprio.
+    columns:
+      - name: country_iso3
+        description: "Sempre 'BRA' (IDEB e indicador especifico do Brasil)."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["BRA"]
+      - name: year
+        description: Ano da observacao.
+        tests:
+          - not_null
+          - accepted_range:
+              arguments:
+                min_value: 2005
+                max_value: 2030
+      - name: value
+        description: "Valor do IDEB observado (escala 0-10)."
+        tests:
+          - not_null
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 10
+      - name: unit
+        description: "Sempre 'pontos' (escala 0-10 do IDEB)."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["pontos"]
+      - name: indicator_id
+        description: "Identificador canonico (IDEB_AI/AF/EM)."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["IDEB_AI", "IDEB_AF", "IDEB_EM"]
+      - name: indicator_name
+        tests:
+          - not_null
+      - name: source
+        description: "Sempre 'inep'."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["inep"]
+      - name: source_indicator_id
+        description: "Coluna original da planilha INEP (VL_OBSERVADO_<ano>)."
+
   - name: int_indicadores__gasto_educacao
     description: >
       Indicador no schema canonico Silver: gasto publico em educacao

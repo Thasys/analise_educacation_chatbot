@@ -13,7 +13,13 @@ from pydantic import BaseModel, Field
 
 # IDs de indicadores publicados na Silver (extensivel via novos
 # int_indicadores__*).
-IndicatorId = Literal["GASTO_EDU_PIB", "LITERACY_15M"]
+IndicatorId = Literal[
+    "GASTO_EDU_PIB",
+    "LITERACY_15M",
+    "IDEB_AI",  # IDEB Anos Iniciais (Fund. 1-5) -- Brasil only
+    "IDEB_AF",  # IDEB Anos Finais (Fund. 6-9)   -- Brasil only
+    "IDEB_EM",  # IDEB Ensino Medio              -- Brasil only
+]
 
 # ISO-3166 alpha-3 (3 letras maiusculas). Validacao em runtime via Field.
 CountryISO3 = Annotated[
@@ -34,7 +40,7 @@ GroupingTag = Literal[
 ]
 
 # Fontes que aparecem na coluna `source` dos intermediates.
-SourceTag = Literal["worldbank", "unesco", "oecd", "eurostat", "ipea", "cepalstat"]
+SourceTag = Literal["worldbank", "unesco", "oecd", "eurostat", "ipea", "cepalstat", "inep"]
 
 
 # ----------------------------------------------------------------------

@@ -17,7 +17,13 @@ from pydantic import BaseModel, Field, field_validator
 # Tipos canonicos (mesmos do api/src/schemas/common.py)
 # ----------------------------------------------------------------------
 
-IndicatorId = Literal["GASTO_EDU_PIB", "LITERACY_15M"]
+IndicatorId = Literal[
+    "GASTO_EDU_PIB",
+    "LITERACY_15M",
+    "IDEB_AI",  # IDEB Anos Iniciais (Fund. 1-5)
+    "IDEB_AF",  # IDEB Anos Finais (Fund. 6-9)
+    "IDEB_EM",  # IDEB Ensino Medio
+]
 
 CountryISO3 = Annotated[
     str,
@@ -35,7 +41,7 @@ GroupingTag = Literal[
     "brics", "asia", "africa_mena", "europe_other",
 ]
 
-SourceTag = Literal["worldbank", "unesco", "oecd", "eurostat", "ipea", "cepalstat"]
+SourceTag = Literal["worldbank", "unesco", "oecd", "eurostat", "ipea", "cepalstat", "inep"]
 
 
 # ----------------------------------------------------------------------

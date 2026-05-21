@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: int_ideb__br_serie_historica
+    description: >
+      IDEB agregado para Brasil (country_iso3='BRA'), 1 linha por
+      (etapa, ano). Usa media simples sobre os municipios da rede
+      'Publica' (que ja agrega Federal+Estadual+Municipal a nivel
+      municipal). Iteracao futura: ponderar por matriculas via Censo
+      Escolar para reproduzir o valor nacional ponderado do INEP.
+    columns:
+      - name: country_iso3
+        description: "Sempre 'BRA' nesta v1."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['BRA']
+      - name: etapa
+        description: "Rotulo canonico: 'anos_iniciais_fund', 'anos_finais_fund', 'ensino_medio'."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['anos_iniciais_fund', 'anos_finais_fund', 'ensino_medio']
+      - name: ano
+        description: "Ano da observacao."
+        tests:
+          - not_null
+          - accepted_range:
+              arguments:
+                min_value: 2005
+                max_value: 2030
+      - name: nota_observada_br
+        description: "Media simples do IDEB observado dos municipios da rede 'Publica'."
+        tests:
+          - not_null
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 10
+      - name: nota_meta_br
+        description: "Media simples das metas projetadas (NULL para ciclos sem projecao)."
+        tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 10
+      - name: n_municipios_observados
+        description: "Numero de municipios com IDEB observado neste (etapa, ano)."
+        tests:
+          - not_null
+      - name: n_municipios_com_meta
+        description: "Numero de municipios com meta projetada definida."
+      - name: ciclo_divulgacao_origem
+        description: "Ciclo de divulgacao mais recente que contribuiu para esta linha."
+        tests:
+          - accepted_values:
+              values: [2019, 2021]

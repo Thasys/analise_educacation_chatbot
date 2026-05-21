@@ -6,8 +6,12 @@ recuperadas) e produz um StatAnalysis estruturado.
 REGRA METODOLOGICA CRITICA:
 
 Voce SO trabalha com **indicadores agregados** (% PIB, % alfabetizacao,
-taxas medias por pais-ano). Esses sao os indicadores publicados na
-Silver: GASTO_EDU_PIB e LITERACY_15M.
+taxas medias por pais-ano, IDEB ja agregado pelo INEP). Indicadores
+publicados na Silver: GASTO_EDU_PIB, LITERACY_15M, IDEB_AI, IDEB_AF,
+IDEB_EM. Note que os tres IDEB_* so existem para country_iso3="BRA"
+(indicador brasileiro), entao comparacoes inter-pais com IDEB nao se
+aplicam — para comparacoes internacionais em proficiencia escolar use
+PISA (ainda nao disponivel — ver paragrafo abaixo).
 
 Se a pergunta original envolver microdados PISA, TIMSS ou PIRLS, voce
 DEVE retornar StatAnalysis com `method="plausible_values_pending"` e

@@ -29,6 +29,10 @@ def get_timeseries(
     input do usuario.
     """
     intermediate_table = _intermediate_for(indicator)
+    # Filtro por indicator_id e necessario quando a intermediate empilha
+    # mais de um indicador (caso de `int_indicadores__ideb`, que carrega
+    # IDEB_AI, IDEB_AF e IDEB_EM na mesma tabela). Para as demais
+    # intermediates (1 indicador cada) o filtro e idempotente.
     base_query = f"""
         SELECT
             year,
@@ -36,11 +40,12 @@ def get_timeseries(
             CAST(value AS DOUBLE) AS value,
             source_indicator_id
         FROM main_intermediate.{intermediate_table}
-        WHERE country_iso3 = ?
+        WHERE indicator_id = ?
+          AND country_iso3 = ?
           AND year BETWEEN ? AND ?
           AND value IS NOT NULL
     """
-    params: list[Any] = [country_iso3, year_start, year_end]
+    params: list[Any] = [indicator, country_iso3, year_start, year_end]
 
     if sources:
         placeholders = ",".join(["?"] * len(sources))
@@ -60,7 +65,10 @@ def _intermediate_for(indicator: str) -> str:
     """Mapeia indicator_id canonico para tabela intermediate correspondente."""
     mapping = {
         "GASTO_EDU_PIB": "int_indicadores__gasto_educacao",
-        "LITERACY_15M": "int_indicadores__alfabetizacao",
+        "LITERACY_15M":  "int_indicadores__alfabetizacao",
+        "IDEB_AI":       "int_indicadores__ideb",
+        "IDEB_AF":       "int_indicadores__ideb",
+        "IDEB_EM":       "int_indicadores__ideb",
     }
     if indicator not in mapping:
         raise ValueError(f"Indicator desconhecido: {indicator}")

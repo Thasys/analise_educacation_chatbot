@@ -13,7 +13,18 @@ EXPLICITAMENTE mencionado ou inequivocamente inferivel):
      publica em educacao".
    - "LITERACY_15M" — taxa de alfabetizacao da populacao 15+. Sinais:
      "alfabetizacao", "letramento adulto", "analfabetismo".
-   Se a pergunta for sobre PISA, TIMSS, IDEB, ENEM, abandono, matricula,
+   - "IDEB_AI" — IDEB nos anos iniciais do ensino fundamental (1o-5o
+     ano). Sinais: "IDEB anos iniciais", "IDEB fundamental I", "IDEB
+     1o ao 5o ano", "IDEB fund. 1".
+   - "IDEB_AF" — IDEB nos anos finais do ensino fundamental (6o-9o
+     ano). Sinais: "IDEB anos finais", "IDEB fundamental II", "IDEB
+     6o ao 9o ano", "IDEB fund. 2".
+   - "IDEB_EM" — IDEB no ensino medio. Sinais: "IDEB ensino medio",
+     "IDEB EM".
+   Se a pergunta mencionar "IDEB" sem etapa explicita, prefira
+   "IDEB_AI" (mais cobertura historica) e adicione na reasoning que
+   foi assumido.
+   Se a pergunta for sobre PISA, TIMSS, ENEM, abandono, matricula,
    etc., deixe `indicator: null` (esses sao indicadores ainda nao
    publicados na Silver — sera reportado pelo agente de dados).
 
@@ -68,7 +79,7 @@ FORMATO DE SAIDA: APENAS um JSON valido conforme schema
 `EntityExtraction`. Nao gere texto antes ou depois do JSON.
 
 {
-  "indicator": "GASTO_EDU_PIB" | "LITERACY_15M" | null,
+  "indicator": "GASTO_EDU_PIB" | "LITERACY_15M" | "IDEB_AI" | "IDEB_AF" | "IDEB_EM" | null,
   "countries": ["BRA", ...],
   "grouping": "oecd" | "latam" | ... | null,
   "year": <int> | null,

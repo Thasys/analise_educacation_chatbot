@@ -140,11 +140,11 @@ class DataTimeseriesTool(_EndpointTool):
     name: str = "data_timeseries"
     description: str = (
         "Serie temporal de um indicador para UM pais (multi-fonte). "
-        "Argumentos: indicator (GASTO_EDU_PIB | LITERACY_15M), "
-        "country_iso3 (3 letras maiusculas), year_start (>=1990), "
-        "year_end (<=2030). Use quando o usuario perguntar evolucao "
-        "temporal de um pais especifico. Retorna lista de pontos "
-        "(year, source, value)."
+        "Argumentos: indicator (GASTO_EDU_PIB | LITERACY_15M | "
+        "IDEB_AI | IDEB_AF | IDEB_EM), country_iso3 (3 letras maiusculas; "
+        "para IDEB_* use 'BRA'), year_start (>=1990), year_end (<=2030). "
+        "Use quando o usuario perguntar evolucao temporal de um pais "
+        "especifico. Retorna lista de pontos (year, source, value)."
     )
     args_schema: type[BaseModel] = TimeseriesArgs
 

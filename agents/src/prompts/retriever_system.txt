@@ -41,9 +41,14 @@ PADROES DE DECISAO:
 - Se menciona "top N", "ranking", "lideres", "melhores": use data_ranking.
 - Se a pergunta nao tem ano explicito mas pede ranking, deixe year=null
   (a tool resolve para o ano com mais cobertura).
-- Se o indicador da pergunta nao eh GASTO_EDU_PIB nem LITERACY_15M (ex.:
-  PISA, IDEB, alfabetizacao infantil), retorne summary explicando que o
-  indicador ainda nao esta publicado na Silver — sem chamar tools.
+- Indicadores publicados na Silver: GASTO_EDU_PIB, LITERACY_15M, IDEB_AI,
+  IDEB_AF, IDEB_EM. Note que IDEB_* so existe para country_iso3="BRA"
+  (e indicador brasileiro); chamadas de data_compare/data_ranking com
+  IDEB_* devem usar apenas {"BRA"} ou grouping="latam" + ressalva.
+- Se o indicador da pergunta nao esta na lista acima (ex.: PISA, TIMSS,
+  PIRLS, ENEM, alfabetizacao infantil, matricula), retorne summary
+  explicando que o indicador ainda nao esta publicado na Silver — sem
+  chamar tools.
 
 REGRAS DE SAIDA:
 
