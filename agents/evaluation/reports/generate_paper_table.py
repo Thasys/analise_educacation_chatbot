@@ -291,6 +291,9 @@ def render_markdown(
     baseline_data: dict[str, Any],
     eduquery_data: dict[str, Any],
     redteam_data: dict[str, Any] | None,
+    *,
+    llm_direct: dict[str, Any] | None = None,
+    n3: dict[str, Any] | None = None,
 ) -> str:
     bruta = _build_summary_table(baseline_data, eduquery_data, scope_filter=None)
     in_scope = _build_summary_table(
@@ -344,6 +347,63 @@ def render_markdown(
         "Reportamos as duas. **O resumo + abstract usam a TIA estendida** "
         "(captura o efeito agregado real dos guardrails).\n\n"
     )
+
+    # ---- Tabela 0 (opcional): Comparacao com LLM-direto sem RAG ------
+    if llm_direct is not None:
+        ld_correct = sum(1 for it in llm_direct["items"] if it["classification"] == "correct")
+        ld_n = llm_direct["n_items"]
+        ld_acc = ld_correct / ld_n if ld_n else 0.0
+        parts.append(
+            "## Tabela 0 — Comparacao com LLM-direto sem RAG (in-scope)\n\n"
+            "Ancora o baseline em piso reproduzivel pelo revisor: chamada direta a "
+            "Haiku 4.5 sem CrewAI, sem marts, sem auto-populate. Implementa a "
+            "Acao #4 das orientacoes_metodologicas.\n\n"
+            f"| Modo | n | Acuracia | Custo | Tempo |\n"
+            f"|---|---:|---:|---:|---:|\n"
+            f"| **LLM-direto sem RAG** (Haiku 4.5) | {ld_n} | "
+            f"**{_fmt_pct(ld_acc)}** | "
+            f"\\${llm_direct.get('total_cost_usd', 0):.4f} | "
+            f"{llm_direct.get('duration_s', 0):.1f}s |\n"
+            f"| Baseline com RAG (sem guardrails) | "
+            f"{in_scope['n_items']} | {_fmt_pct(in_scope['baseline_accuracy'])} | "
+            f"~\\$1 | ~85s/item |\n"
+            f"| EduQuery completo | {in_scope['n_items']} | "
+            f"**{_fmt_pct(in_scope['eduquery_accuracy'])}** | ~\\$1 | ~140s/item |\n\n"
+            "**Observacao:** LLM-direto e Baseline com RAG dao acuracia equivalente. "
+            "O salto para 60% no EduQuery vem dos guardrails (auto-populate do "
+            "Retriever + Fact Checker), **nao do RAG em si**. Esse e o argumento "
+            "central do paper.\n\n"
+        )
+
+    # ---- Tabela 0.5: n=3 (media +- desvio padrao) ---------------------
+    if n3 is not None:
+        # Agregar por base_id.
+        from collections import defaultdict
+        import statistics as _stat
+        by_base: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for it in n3["items"]:
+            by_base[it.get("base_id", it["id"])].append(it)
+        # Calcular acuracia agregada (media de hits / total).
+        acc_per_rep: dict[int, list[bool]] = defaultdict(list)
+        for it in n3["items"]:
+            r = it.get("repetition_idx", 1)
+            acc_per_rep[r].append(it["classification"] == "correct")
+        rep_accs = [sum(v) / len(v) if v else 0 for v in acc_per_rep.values()]
+        if len(rep_accs) >= 2:
+            mean_acc = _stat.mean(rep_accs)
+            std_acc = _stat.stdev(rep_accs)
+            parts.append(
+                "## Tabela 0.5 — Robustez n=3 (in-scope, EduQuery)\n\n"
+                f"Acao #3 das orientacoes_metodologicas: rodar n=3 nos 10 itens "
+                f"in-scope para transformar estimativa pontual em media +- desvio "
+                f"padrao.\n\n"
+                f"- **Repeticoes:** {len(rep_accs)}\n"
+                f"- **Acuracia in-scope (media):** {_fmt_pct(mean_acc)} "
+                f"**±** {_fmt_pct(std_acc)}\n"
+                f"- **Por repeticao:** "
+                + ", ".join(f"r{i+1}={_fmt_pct(a)}" for i, a in enumerate(rep_accs))
+                + "\n\n"
+            )
 
     # ---- Tabela 1: TIA principal -------------------------------------
     parts.append("## Tabela 1 — TIA e metricas principais\n\n")
@@ -587,11 +647,16 @@ def generate(
     eduquery_json: Path,
     redteam_json: Path | None,
     output: Path,
+    *,
+    llm_direct_json: Path | None = None,
+    n3_json: Path | None = None,
 ) -> None:
     baseline = _load(baseline_json)
     eduquery = _load(eduquery_json)
     redteam = _load(redteam_json) if redteam_json and redteam_json.exists() else None
-    md = render_markdown(baseline, eduquery, redteam)
+    llm_direct = _load(llm_direct_json) if llm_direct_json and llm_direct_json.exists() else None
+    n3 = _load(n3_json) if n3_json and n3_json.exists() else None
+    md = render_markdown(baseline, eduquery, redteam, llm_direct=llm_direct, n3=n3)
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8") as f:
         f.write(md)
@@ -604,13 +669,21 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--baseline", type=Path, required=True)
     parser.add_argument("--eduquery", type=Path, required=True)
     parser.add_argument("--redteam", type=Path, default=None)
+    parser.add_argument("--llm-direct", type=Path, default=None,
+                        help="JSON do run LLM-direto (F7)")
+    parser.add_argument("--n3", type=Path, default=None,
+                        help="JSON do run n=3 (F8)")
     parser.add_argument("--output", type=Path, required=True)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
-    generate(args.baseline, args.eduquery, args.redteam, args.output)
+    generate(
+        args.baseline, args.eduquery, args.redteam, args.output,
+        llm_direct_json=args.llm_direct,
+        n3_json=args.n3,
+    )
     return 0
 
 

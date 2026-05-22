@@ -179,6 +179,8 @@ def execute(
     gateway_client: Any | None = None,
     rag_client: Any | None = None,
     use_cache: bool = True,
+    repetitions: int = 1,
+    in_scope_only: bool = False,
 ) -> dict[str, Any]:
     """Roda a bateria sobre `items` e persiste JSON em `output`.
 
@@ -200,7 +202,32 @@ def execute(
     started_at = datetime.now(timezone.utc).isoformat()
     t0 = time.perf_counter()
 
+    # in_scope_only filter (F8 — n=3 sobre os 10 in-scope).
+    if in_scope_only:
+        from evaluation.reports.generate_paper_table import classify_scope
+
+        items = [
+            it for it in items
+            if it.kind in ("factual", "comparative")
+            and classify_scope({
+                "kind": it.kind,
+                "query": it.query,
+                "expected_behavior": it.expected_behavior,
+            }) == "in_scope"
+        ]
     subset = items[:limit] if limit is not None else items
+
+    # Repetitions: para n>1, replicamos cada item com sufixo `_rN` no id.
+    if repetitions > 1:
+        expanded = []
+        for r in range(1, repetitions + 1):
+            for it in subset:
+                # Wrap leve para mudar o id (e desabilitar cache).
+                expanded.append((it, r))
+        subset_with_rep = expanded
+        use_cache = False  # repetitions exigem chamadas independentes
+    else:
+        subset_with_rep = [(it, 1) for it in subset]
 
     # Cache setup (F6 do plano pos-orientacao 2026-05-21).
     import os
@@ -219,14 +246,16 @@ def execute(
         "evaluation.runner.start",
         mode=mode,
         no_guardrails=no_guardrails,
-        n_items=len(subset),
+        n_items=len(subset_with_rep),
+        n_unique=len(subset),
+        repetitions=repetitions,
         output=str(output),
         use_cache=use_cache,
     )
 
     results: list[dict[str, Any]] = []
     n_cache_hits = 0
-    for i, item in enumerate(subset, 1):
+    for i, (item, rep_idx) in enumerate(subset_with_rep, 1):
         # ---- Cache hit? ----
         if use_cache and cache_key_fn is not None:
             key = cache_key_fn(item.query)
@@ -287,7 +316,9 @@ def execute(
             )
 
         record = {
-            "id": item.id,
+            "id": item.id if repetitions == 1 else f"{item.id}_r{rep_idx}",
+            "base_id": item.id,
+            "repetition_idx": rep_idx,
             "kind": item.kind,
             "query": item.query,
             "expected_value": item.expected_value if item.kind == "factual" else item.expected_brazil,
@@ -312,8 +343,9 @@ def execute(
             "evaluation.runner.item_done",
             mode=mode,
             i=i,
-            of=len(subset),
+            of=len(subset_with_rep),
             id=item.id,
+            rep=rep_idx,
             classification=classification.value,
             latency_s=round(item_latency, 2),
         )

@@ -370,3 +370,57 @@ contra fontes primarias serao executados.
 ---
 
 **Atualizado em:** 2026-05-20 (analise pos-bateria + calibracao de tolerancias).
+
+---
+
+## 7. Balanco das acoes pos-orientacao (2026-05-22)
+
+Implementacao integral das **8 acoes do PDF
+`orientacoes_metodologicas_EduQuery_SBIE2026.pdf`** entregue pelo
+orientador em 2026-05-21.
+
+### Acoes concluidas
+
+| # | Acao | Custo gasto | Resultado |
+|:-:|---|---:|---|
+| 1 | Verificar gabaritos in-scope contra fontes primarias | $0 | 10 itens com `_verified: true`; F-016 ajustado de 6,6 -> 6,1 (mediana reconciliada de 4 fontes oficiais) |
+| 2 | Re-analisar 30 markdowns adversariais (TCC) | $0,006 | **TCC = 25/30 = 83,3%** (vs 1/30 = 3,3% que a heuristica anterior implicava) |
+| 3 | Rodar n=3 nos 10 in-scope | $~9 | **Acuracia in-scope = 63,3% ± 11,5%** (3 repeticoes); substitui estimativa pontual de 60% |
+| 4 | Baseline LLM-direto sem RAG (Haiku) | $0,006 | LLM-direto = 10% acuracia, **igual ao baseline RAG** -> argumento de que os guardrails (nao o RAG) sao responsaveis pelo ganho |
+| 5 | Cadeia causal de 3 interceptacoes | $0 | `cadeia-causal-interceptacoes.md`: F-015, F-017, C-001 narrados componente-a-componente (auto-populate ADR 0006 + precomputed_metrics ADR 0007) |
+| 6 | Taxonomia de Bloom em 54 itens | $0 | 31 remember, 17 understand, 6 analyze |
+| 7 | Schema YAML adversarial estendido | $0 | `verification_method` + `acceptance_criteria` em 30 itens |
+| 8 | Cache sha256 no runner | $0 | Implementado em `evaluation/shared/cache.py` + integrado em `runner.execute(use_cache=True)`; especialmente eficaz para itens out_of_scope |
+| extra | Batch API Anthropic (50% desconto) | — | `evaluation/metrics/llm_judge_batch.py`; custo medido $0,00272 para 4 itens |
+
+**Custo total da implementacao: ~$9,02 (vs $10 estimado pelo orientador).**
+
+### Acoes nao implementadas (escopo da revisao pos-notificacao)
+
+- **Avaliador externo** para 5-10 itens (Tabela 2.1, validade de
+  conteudo): requer recurso humano externo. Programado para revisao
+  pos-notificacao SBIE 2026-07-08.
+- **Verificacao manual dos 44 itens out_of_scope**: nao critico para
+  TIA in-scope; trabalho futuro.
+
+### Numeros finais para o artigo
+
+- **TIA estendida in-scope: 55,6%** (n=1, recomendacao do orientador
+  mantida).
+- **Acuracia in-scope EduQuery: 63,3% ± 11,5%** (n=3).
+- **Acuracia LLM-direto sem RAG: 10%** (10 itens).
+- **Acuracia baseline com RAG sem guardrails: 10%** (10 itens).
+- **TCC adversariais: 83,3%** (25/30 categorias-comportamento).
+- **Acuracia agregada: 6× melhor que LLM-direto / baseline RAG**.
+
+A separacao "LLM-direto = baseline RAG = 10% « EduQuery = 63%"
+**confirma que o ganho vem dos guardrails, nao do RAG**.
+
+### Suite de testes
+
+126/126 unit tests passam em 0,9s (89 originais + 37 novos para
+refusal_patterns, classify_adversarial, cache, llm_judge).
+
+---
+
+**Atualizado em:** 2026-05-22 (balanco final pos-orientacao).

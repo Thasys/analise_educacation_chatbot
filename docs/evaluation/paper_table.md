@@ -12,6 +12,26 @@ O EduQuery v1 cobre apenas `GASTO_EDU_PIB` e `LITERACY_15M`. Itens sobre PISA/TI
 
 Reportamos as duas. **O resumo + abstract usam a TIA estendida** (captura o efeito agregado real dos guardrails).
 
+## Tabela 0 — Comparacao com LLM-direto sem RAG (in-scope)
+
+Ancora o baseline em piso reproduzivel pelo revisor: chamada direta a Haiku 4.5 sem CrewAI, sem marts, sem auto-populate. Implementa a Acao #4 das orientacoes_metodologicas.
+
+| Modo | n | Acuracia | Custo | Tempo |
+|---|---:|---:|---:|---:|
+| **LLM-direto sem RAG** (Haiku 4.5) | 10 | **10.0%** | \$0.0062 | 27.8s |
+| Baseline com RAG (sem guardrails) | 10 | 10.0% | ~\$1 | ~85s/item |
+| EduQuery completo | 10 | **60.0%** | ~\$1 | ~140s/item |
+
+**Observacao:** LLM-direto e Baseline com RAG dao acuracia equivalente. O salto para 60% no EduQuery vem dos guardrails (auto-populate do Retriever + Fact Checker), **nao do RAG em si**. Esse e o argumento central do paper.
+
+## Tabela 0.5 — Robustez n=3 (in-scope, EduQuery)
+
+Acao #3 das orientacoes_metodologicas: rodar n=3 nos 10 itens in-scope para transformar estimativa pontual em media +- desvio padrao.
+
+- **Repeticoes:** 3
+- **Acuracia in-scope (media):** 63.3% **±** 11.5%
+- **Por repeticao:** r1=70.0%, r2=70.0%, r3=50.0%
+
 ## Tabela 1 — TIA e metricas principais
 
 | Recorte | n | TIA estrita | TIA estendida | FP rate | Acuracia baseline | Acuracia EduQuery |
