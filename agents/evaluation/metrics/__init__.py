@@ -13,8 +13,13 @@ from evaluation.metrics.doi_validity import (
 )
 from evaluation.metrics.source_coverage import compute_source_recall
 from evaluation.metrics.hallucination_classifier import (
+    classify_adversarial,
     classify_response,
     Classification,
+)
+from evaluation.metrics.refusal_patterns import (
+    markdown_contains_refusal,
+    markdown_invents_value,
 )
 from evaluation.metrics.guardrails_efficacy import (
     QueryResult,
@@ -26,10 +31,13 @@ __all__ = [
     "Classification",
     "NumericResult",
     "QueryResult",
+    "classify_adversarial",
     "classify_response",
     "compute_false_positive_rate",
     "compute_source_recall",
     "compute_tia",
     "is_doi_resolvable",
     "is_doi_syntactically_valid",
+    "markdown_contains_refusal",
+    "markdown_invents_value",
 ]

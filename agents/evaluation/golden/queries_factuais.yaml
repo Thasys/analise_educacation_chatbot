@@ -25,6 +25,7 @@
   doi: "10.1787/53f23881-en"
   notes: "Divulgado em 05/12/2023"
   _verified: false
+  bloom_level: remember
 
 - id: F-002
   query: "Qual foi a nota media do Brasil em Leitura no PISA 2022?"
@@ -35,6 +36,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-003
   query: "Qual foi a nota media do Brasil em Ciencias no PISA 2022?"
@@ -45,6 +47,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-004
   query: "Qual a media OCDE em Matematica no PISA 2022?"
@@ -55,6 +58,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-005
   query: "Qual a media OCDE em Leitura no PISA 2022?"
@@ -65,6 +69,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-006
   query: "Qual a media OCDE em Ciencias no PISA 2022?"
@@ -75,6 +80,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-007
   query: "Qual foi a nota do Brasil em Matematica no PISA 2018?"
@@ -85,6 +91,7 @@
   doi: "10.1787/5f07c754-en"
   notes: "Brasil rank 71/79 em Math em 2018"
   _verified: false
+  bloom_level: remember
 
 - id: F-008
   query: "Qual foi a nota da Finlandia em Matematica no PISA 2022?"
@@ -95,6 +102,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-009
   query: "Qual foi a nota do Japao em Matematica no PISA 2022?"
@@ -105,6 +113,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-010
   query: "Qual foi a nota dos Estados Unidos em Matematica no PISA 2022?"
@@ -115,6 +124,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-011
   query: "Qual o IDEB dos anos iniciais do ensino fundamental no Brasil em 2021?"
@@ -125,6 +135,7 @@
   doi: null
   notes: "Meta projetada para 2021 era 6.0"
   _verified: false
+  bloom_level: remember
 
 - id: F-012
   query: "Qual o IDEB dos anos finais do ensino fundamental no Brasil em 2021?"
@@ -135,6 +146,7 @@
   doi: null
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-013
   query: "Qual o IDEB do ensino medio no Brasil em 2021?"
@@ -145,6 +157,7 @@
   doi: null
   notes: "Mesmo valor de 2019; estagnacao"
   _verified: false
+  bloom_level: remember
 
 - id: F-014
   query: "Qual o IDEB dos anos iniciais do ensino fundamental no Brasil em 2019?"
@@ -155,6 +168,7 @@
   doi: null
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-015
   query: "Qual a taxa de analfabetismo de pessoas de 15 anos ou mais no Brasil em 2022?"
@@ -164,17 +178,19 @@
   primary_source: "IBGE, PNAD Continua Educacao 2022"
   doi: null
   notes: "Equivale a ~9,3 milhoes de pessoas"
-  _verified: false
+  _verified: true
+  bloom_level: remember
 
 - id: F-016
   query: "Qual a taxa de analfabetismo de pessoas de 15 anos ou mais no Brasil em 2019?"
-  expected_value: 6.6
+  expected_value: 6.1
   tolerance_pct: 5
   unit: "%"
-  primary_source: "IBGE, PNAD Continua Educacao 2019"
+  primary_source: "IBGE PNAD Continua 2019 via CEPALSTAT/UNESCO/IPEA/World Bank (mart_alfabetizacao__latam_2020s)"
   doi: null
-  notes: null
-  _verified: false
+  notes: "Ajustado em 2026-05-22 de 6,6 (divulgacao IBGE preliminar) para 6,1 (mediana reconciliada entre 4 fontes oficiais no mart). Ver verify_in_scope_goldens.py."
+  _verified: true
+  bloom_level: remember
 
 - id: F-017
   query: "Qual o gasto publico em educacao como % do PIB no Brasil em 2021?"
@@ -184,7 +200,8 @@
   primary_source: "INEP/SIOPE consolidado; tambem World Bank EdStats SE.XPD.TOTL.GD.ZS"
   doi: null
   notes: "Brasil costuma estar acima da media OCDE em % do PIB; veja F-018"
-  _verified: false
+  _verified: true
+  bloom_level: remember
 
 - id: F-018
   query: "Qual a media OCDE de gasto publico em educacao como % do PIB em 2021?"
@@ -194,7 +211,8 @@
   primary_source: "OECD Education at a Glance 2024, Table C2.1"
   doi: "10.1787/c00cad36-en"
   notes: null
-  _verified: false
+  _verified: true
+  bloom_level: remember
 
 - id: F-019
   query: "Qual a escolaridade media (em anos de estudo) das pessoas de 25 anos ou mais no Brasil em 2022?"
@@ -205,6 +223,7 @@
   doi: null
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-020
   query: "Qual a taxa de conclusao do ensino medio entre brasileiros de 25 a 34 anos em 2021?"
@@ -214,7 +233,8 @@
   primary_source: "OECD Education at a Glance 2023, Brazil Country Note"
   doi: "10.1787/e13bef63-en"
   notes: null
-  _verified: false
+  _verified: true
+  bloom_level: remember
 
 - id: F-021
   query: "Qual a media OCDE de conclusao do ensino medio entre 25 a 34 anos em 2021?"
@@ -224,7 +244,8 @@
   primary_source: "OECD Education at a Glance 2023, Table A1.1"
   doi: "10.1787/e13bef63-en"
   notes: null
-  _verified: false
+  _verified: true
+  bloom_level: analyze
 
 - id: F-022
   query: "Quantos paises participaram do PISA 2022?"
@@ -235,6 +256,7 @@
   doi: "10.1787/53f23881-en"
   notes: "37 OCDE + 44 parceiros; alguns paises participam como economias subnacionais"
   _verified: false
+  bloom_level: remember
 
 - id: F-023
   query: "Qual foi a nota de Singapura em Matematica no PISA 2022?"
@@ -245,6 +267,7 @@
   doi: "10.1787/53f23881-en"
   notes: "Maior nota mundial em Matematica em 2022"
   _verified: false
+  bloom_level: remember
 
 - id: F-024
   query: "Qual a taxa de matricula liquida no ensino medio no Brasil em 2022?"
@@ -255,6 +278,7 @@
   doi: null
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-025
   query: "Qual a taxa de matricula bruta no ensino superior no Brasil em 2021?"
@@ -265,6 +289,7 @@
   doi: null
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-026
   query: "Qual foi a nota da Coreia do Sul em Matematica no PISA 2022?"
@@ -275,6 +300,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-027
   query: "Qual foi a nota da Alemanha em Ciencias no PISA 2022?"
@@ -285,6 +311,7 @@
   doi: "10.1787/53f23881-en"
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-028
   query: "Qual a taxa de abandono escolar no ensino medio no Brasil em 2021?"
@@ -295,6 +322,7 @@
   doi: null
   notes: "Indicador difere de evasao; checar definicao na Fase 2"
   _verified: false
+  bloom_level: remember
 
 - id: F-029
   query: "Qual a populacao em idade escolar (4-17 anos) no Brasil em 2022?"
@@ -305,6 +333,7 @@
   doi: null
   notes: "Aproximado; checar coorte exata na Fase 2"
   _verified: false
+  bloom_level: remember
 
 - id: F-030
   query: "Qual o numero de docentes da educacao basica no Brasil em 2022?"
@@ -315,6 +344,7 @@
   doi: null
   notes: null
   _verified: false
+  bloom_level: remember
 
 - id: F-031
   query: "Qual a media OCDE em Matematica no PISA 2018?"
@@ -325,6 +355,7 @@
   doi: "10.1787/5f07c754-en"
   notes: "Para comparar com queda do brasileiro entre 2018 e 2022"
   _verified: false
+  bloom_level: remember
 
 - id: F-032
   query: "Qual o gasto medio por aluno na educacao primaria no Brasil em 2021 (USD PPP)?"
@@ -335,3 +366,4 @@
   doi: "10.1787/c00cad36-en"
   notes: "Conferir base USD PPP vs nominal na Fase 2"
   _verified: false
+  bloom_level: remember

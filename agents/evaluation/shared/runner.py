@@ -178,6 +178,7 @@ def execute(
     limit: int | None = None,
     gateway_client: Any | None = None,
     rag_client: Any | None = None,
+    use_cache: bool = True,
 ) -> dict[str, Any]:
     """Roda a bateria sobre `items` e persiste JSON em `output`.
 
@@ -200,16 +201,45 @@ def execute(
     t0 = time.perf_counter()
 
     subset = items[:limit] if limit is not None else items
+
+    # Cache setup (F6 do plano pos-orientacao 2026-05-21).
+    import os
+
+    cache_mod = None
+    cache_key_fn = None
+    if use_cache:
+        from evaluation.shared import cache as cache_mod  # noqa: F811
+        cache_key_fn = lambda q: cache_mod.cache_key(  # noqa: E731
+            q, mode=mode,
+            model_smart=os.environ.get("AGENTS_LLM_SMART_MODEL", "default"),
+            model_fast=os.environ.get("AGENTS_LLM_FAST_MODEL", "default"),
+        )
+
     log.info(
         "evaluation.runner.start",
         mode=mode,
         no_guardrails=no_guardrails,
         n_items=len(subset),
         output=str(output),
+        use_cache=use_cache,
     )
 
     results: list[dict[str, Any]] = []
+    n_cache_hits = 0
     for i, item in enumerate(subset, 1):
+        # ---- Cache hit? ----
+        if use_cache and cache_key_fn is not None:
+            key = cache_key_fn(item.query)
+            cached = cache_mod.get(output.parent, key)
+            if cached is not None:
+                results.append(cached)
+                n_cache_hits += 1
+                log.info(
+                    "evaluation.runner.cache_hit",
+                    mode=mode, i=i, of=len(subset), id=item.id, key=key,
+                )
+                continue
+
         item_t0 = time.perf_counter()
         final, error = _safe_run_master(
             item.query,
@@ -276,6 +306,8 @@ def execute(
             "error": error,
         }
         results.append(record)
+        if use_cache and cache_mod is not None and cache_key_fn is not None:
+            cache_mod.put(output.parent, cache_key_fn(item.query), record)
         log.info(
             "evaluation.runner.item_done",
             mode=mode,
@@ -293,6 +325,7 @@ def execute(
         "started_at": started_at,
         "duration_s": round(duration_s, 2),
         "n_items": len(results),
+        "n_cache_hits": n_cache_hits,
         "items": results,
     }
     with output.open("w", encoding="utf-8") as f:

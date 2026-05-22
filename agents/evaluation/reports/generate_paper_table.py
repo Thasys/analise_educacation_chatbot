@@ -203,6 +203,30 @@ def _doi_recall_mean(items: list[dict[str, Any]]) -> float | None:
     return round(statistics.mean(values), 3) if values else None
 
 
+def _tcc_by_category(items: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    """Conta TCC (CORRECT/BLOCKED/HALLUCINATED via tcc_classification)
+    por categoria adversarial. Inclui metodo de verificacao usado.
+
+    Implementa Tabela 3.4 das orientacoes_metodologicas (2026-05-21).
+    Fallback: se item nao tem `tcc_classification`, usa `classification`.
+    """
+    by_cat: dict[str, dict[str, int]] = {}
+    for it in items:
+        if it.get("kind") != "adversarial":
+            continue
+        cat = it.get("category") or "uncategorized"
+        bucket = by_cat.setdefault(
+            cat,
+            {"correct": 0, "blocked": 0, "hallucinated": 0, "methods": {}},
+        )
+        cls = it.get("tcc_classification") or it["classification"]
+        if cls in ("correct", "blocked", "hallucinated"):
+            bucket[cls] += 1
+        method = it.get("tcc_method", "?")
+        bucket["methods"][method] = bucket["methods"].get(method, 0) + 1
+    return by_cat
+
+
 def _adversarial_by_category(items: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     """Conta CORRECT/BLOCKED/HALLUCINATED por categoria adversarial."""
     by_cat: dict[str, dict[str, int]] = {}
@@ -374,8 +398,13 @@ def render_markdown(
         f"{in_scope['eduquery_doi_recall'] if in_scope['eduquery_doi_recall'] is not None else '—'} |\n"
     )
 
-    # ---- Tabela 4: adversarial por categoria -------------------------
-    parts.append("\n## Tabela 4 — Breakdown adversarial por categoria (EduQuery)\n")
+    # ---- Tabela 4: adversarial por categoria (TIA estrita) -----------
+    parts.append("\n## Tabela 4 — Breakdown adversarial: TIA estrita (Fact Checker)\n\n")
+    parts.append(
+        "Mede apenas bloqueios explicitos pelo Fact Checker / Pydantic. "
+        "Sub-estima o desempenho do sistema pois ignora recusas textuais. "
+        "Comparar com Tabela 5 abaixo (TCC).\n\n"
+    )
     parts.append("| Categoria | n | Bloqueados | Alucinados | Taxa de bloqueio |\n")
     parts.append("|---|---:|---:|---:|---:|\n")
     for cat in sorted(adv_by_cat.keys()):
@@ -386,9 +415,42 @@ def render_markdown(
             f"| {cat} | {n} | {b['blocked']} | {b['hallucinated']} | {_fmt_pct(rate)} |\n"
         )
 
-    # ---- Tabela 5: transicoes in-scope (item-a-item) -----------------
+    # ---- Tabela 5: TCC por categoria (Taxa de Comportamento Correto) -
+    tcc_data = _tcc_by_category(eduquery_data["items"])
+    if tcc_data:
+        parts.append("\n## Tabela 5 — TCC (Taxa de Comportamento Correto) por categoria\n\n")
+        parts.append(
+            "Metrica proposta nas orientacoes_metodologicas (2026-05-21, Secao 3): "
+            "para adversariais, a pergunta certa nao e 'interceptou alucinacao?' mas "
+            "'o sistema se comportou conforme esperado?'. Captura recusas textuais, "
+            "scope_disclaimers e validacoes Pydantic em 3 camadas (structural / "
+            "semantic / llm_judge).\n\n"
+        )
+        parts.append("| Categoria | n | Comportamento correto | TCC | Metodo predominante |\n")
+        parts.append("|---|---:|---:|---:|---|\n")
+        total_n = 0
+        total_correct = 0
+        for cat in sorted(tcc_data.keys()):
+            b = tcc_data[cat]
+            n = b["correct"] + b["blocked"] + b["hallucinated"]
+            correct = b["correct"] + b["blocked"]
+            rate = correct / n if n else 0.0
+            methods = b.get("methods", {})
+            top_method = max(methods, key=methods.get) if methods else "?"
+            parts.append(
+                f"| {cat} | {n} | {correct} | {_fmt_pct(rate)} | {top_method} |\n"
+            )
+            total_n += n
+            total_correct += correct
+        if total_n:
+            parts.append(
+                f"| **TOTAL** | **{total_n}** | **{total_correct}** | "
+                f"**{_fmt_pct(total_correct / total_n)}** | — |\n"
+            )
+
+    # ---- Tabela 6: transicoes in-scope (item-a-item) -----------------
     parts.append(
-        "\n## Tabela 5 — Transicoes in-scope (item-a-item)\n\n"
+        "\n## Tabela 6 — Transicoes in-scope (item-a-item)\n\n"
         "Mostra exatamente quais perguntas o EduQuery interceptou e quais "
         "deixou passar. Padrao: interceptacao ocorre quando indicador + ano "
         "cabem no recorte dos marts atuais.\n\n"

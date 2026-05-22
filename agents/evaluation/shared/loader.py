@@ -49,10 +49,14 @@ class GoldenItem:
     reason: str | None = None
     inject_malformed_figure: bool = False
     context_hint: str | None = None
+    # TCC (orientacoes_metodologicas 2026-05-21)
+    verification_method: str = "semantic"
+    acceptance_criteria: dict = field(default_factory=dict)
 
     # Metadata
     notes: str | None = None
     verified: bool = False
+    bloom_level: str | None = None  # remember | understand | analyze | ...
 
 
 def _load_yaml(path: Path) -> list[dict[str, Any]]:
@@ -75,6 +79,7 @@ def _build_factual(d: dict[str, Any]) -> GoldenItem:
         doi=d.get("doi"),
         notes=d.get("notes"),
         verified=bool(d.get("_verified", False)),
+        bloom_level=d.get("bloom_level"),
     )
 
 
@@ -100,6 +105,7 @@ def _build_comparative(d: dict[str, Any]) -> GoldenItem:
         primary_source=d.get("primary_source"),
         notes=d.get("notes"),
         verified=bool(d.get("_verified", False)),
+        bloom_level=d.get("bloom_level"),
     )
 
 
@@ -114,6 +120,8 @@ def _build_adversarial(d: dict[str, Any]) -> GoldenItem:
         reason=d.get("reason"),
         inject_malformed_figure=bool(d.get("inject_malformed_figure", False)),
         context_hint=d.get("context_hint"),
+        verification_method=str(d.get("verification_method") or "semantic"),
+        acceptance_criteria=dict(d.get("acceptance_criteria") or {}),
     )
 
 

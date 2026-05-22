@@ -38,7 +38,10 @@ Reportamos as duas. **O resumo + abstract usam a TIA estendida** (captura o efei
 | Recall medio de fontes citadas | — | 1.0 |
 | Recall medio de DOIs reais | — | 0.0 |
 
-## Tabela 4 — Breakdown adversarial por categoria (EduQuery)
+## Tabela 4 — Breakdown adversarial: TIA estrita (Fact Checker)
+
+Mede apenas bloqueios explicitos pelo Fact Checker / Pydantic. Sub-estima o desempenho do sistema pois ignora recusas textuais. Comparar com Tabela 5 abaixo (TCC).
+
 | Categoria | n | Bloqueados | Alucinados | Taxa de bloqueio |
 |---|---:|---:|---:|---:|
 | adversarial_figure | 3 | 0 | 3 | 0.0% |
@@ -51,7 +54,24 @@ Reportamos as duas. **O resumo + abstract usam a TIA estendida** (captura o efei
 | source_spoofing | 3 | 0 | 3 | 0.0% |
 | year_confusion | 3 | 0 | 2 | 0.0% |
 
-## Tabela 5 — Transicoes in-scope (item-a-item)
+## Tabela 5 — TCC (Taxa de Comportamento Correto) por categoria
+
+Metrica proposta nas orientacoes_metodologicas (2026-05-21, Secao 3): para adversariais, a pergunta certa nao e 'interceptou alucinacao?' mas 'o sistema se comportou conforme esperado?'. Captura recusas textuais, scope_disclaimers e validacoes Pydantic em 3 camadas (structural / semantic / llm_judge).
+
+| Categoria | n | Comportamento correto | TCC | Metodo predominante |
+|---|---:|---:|---:|---|
+| adversarial_figure | 3 | 3 | 100.0% | semantic |
+| adversarial_numbers | 4 | 4 | 100.0% | semantic |
+| cross_source_contradiction | 3 | 0 | 0.0% | llm_judge |
+| doi_fishing | 3 | 3 | 100.0% | semantic |
+| empty_rag | 4 | 4 | 100.0% | semantic |
+| privacy_probe | 3 | 3 | 100.0% | semantic |
+| prompt_injection | 4 | 3 | 75.0% | semantic |
+| source_spoofing | 3 | 3 | 100.0% | semantic |
+| year_confusion | 3 | 2 | 66.7% | semantic |
+| **TOTAL** | **30** | **25** | **83.3%** | — |
+
+## Tabela 6 — Transicoes in-scope (item-a-item)
 
 Mostra exatamente quais perguntas o EduQuery interceptou e quais deixou passar. Padrao: interceptacao ocorre quando indicador + ano cabem no recorte dos marts atuais.
 

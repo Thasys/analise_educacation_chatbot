@@ -70,10 +70,15 @@ def test_adversarial_tem_expected_behavior_canonico() -> None:
     assert behaviors.issubset(canonicos), f"unexpected: {behaviors - canonicos}"
 
 
-def test_verified_default_false_na_fase_1() -> None:
-    """Fase 1 marca todos como DRAFT. Fase 3 cross-checa antes do run oficial."""
+def test_in_scope_items_sao_verificados() -> None:
+    """Acao #1 das orientacoes_metodologicas (2026-05-21): os 10 itens
+    in-scope devem ter _verified=true. Os demais ficam como DRAFT para
+    revisao final pos-notificacao SBIE."""
     items = load_golden(GOLDEN_DIR)
     factuais_e_comp = [it for it in items if it.kind in ("factual", "comparative")]
-    nao_verificados = [it for it in factuais_e_comp if not it.verified]
-    # Esperamos a totalidade nao-verificada nesta fase.
-    assert len(nao_verificados) == len(factuais_e_comp)
+    verificados = [it for it in factuais_e_comp if it.verified]
+    # Os 10 in-scope foram verificados em 2026-05-22 (ver
+    # `verify_in_scope_goldens.py` e `mark_verified.py`).
+    assert len(verificados) >= 10, (
+        f"Esperado >=10 itens verificados, encontrei {len(verificados)}"
+    )

@@ -32,7 +32,8 @@
   sources_required: ["INEP", "OECD"]
   primary_source: "OECD Education at a Glance 2024 + SIOPE/INEP"
   notes: "Brasil acima da media OCDE em % do PIB embora abaixo em USD por aluno"
-  _verified: false
+  _verified: true
+  bloom_level: understand
 
 - id: C-002
   query: "Compare a nota em Matematica do Brasil com a media OCDE no PISA 2022."
@@ -47,6 +48,7 @@
   primary_source: "OECD PISA 2022 Results, Volume I"
   notes: "Gap de ~93 pontos, ~3 anos de aprendizagem"
   _verified: false
+  bloom_level: understand
 
 - id: C-003
   query: "Compare a nota em Leitura entre Brasil e media OCDE no PISA 2022."
@@ -61,6 +63,7 @@
   primary_source: "OECD PISA 2022 Results"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-004
   query: "Compare a nota em Ciencias entre Brasil e media OCDE no PISA 2022."
@@ -75,6 +78,7 @@
   primary_source: "OECD PISA 2022 Results"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-005
   query: "Compare o gasto por aluno na educacao primaria (USD PPP) entre Brasil, Finlandia e Coreia do Sul em 2021."
@@ -91,6 +95,7 @@
   primary_source: "OECD Education at a Glance 2024, Table C1.1"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-006
   query: "Compare a taxa de conclusao do ensino medio entre 25-34 anos no Brasil e na media OCDE em 2021."
@@ -105,6 +110,7 @@
   primary_source: "OECD Education at a Glance 2023, Table A1.1"
   notes: null
   _verified: false
+  bloom_level: analyze
 
 - id: C-007
   query: "Compare a taxa de matricula bruta no ensino superior entre Brasil e Argentina em 2021."
@@ -120,6 +126,7 @@
   primary_source: "UNESCO UIS, gross enrolment ratio tertiary"
   notes: "Argentina tem matricula bruta acima de 100% em alguns anos"
   _verified: false
+  bloom_level: understand
 
 - id: C-008
   query: "Compare a evolucao da nota de Matematica do Brasil entre PISA 2018 e 2022."
@@ -135,6 +142,7 @@
   primary_source: "OECD PISA 2018 + 2022 Results"
   notes: "Queda de 5 pontos; menos pronunciada que media OCDE (-15)"
   _verified: false
+  bloom_level: analyze
 
 - id: C-009
   query: "Compare o IDEB dos anos iniciais entre Brasil e a media da regiao Sudeste em 2021."
@@ -150,6 +158,7 @@
   primary_source: "INEP, IDEB 2021 por regiao geografica"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-010
   query: "Compare o gasto publico em educacao como % do PIB entre Brasil, EUA e Mexico em 2020."
@@ -165,7 +174,8 @@
   sources_required: ["World Bank"]
   primary_source: "World Bank EdStats SE.XPD.TOTL.GD.ZS 2020"
   notes: "Valores que aparecem em mart_br_vs_ocde__gasto_educacao_timeseries"
-  _verified: false
+  _verified: true
+  bloom_level: understand
 
 - id: C-011
   query: "Compare a taxa de analfabetismo de 15+ entre Brasil em 2019 e 2022."
@@ -180,7 +190,8 @@
   sources_required: ["IBGE"]
   primary_source: "IBGE PNAD Continua Educacao 2019 e 2022"
   notes: "Reducao de 1 ponto percentual em 3 anos"
-  _verified: false
+  _verified: true
+  bloom_level: analyze
 
 - id: C-012
   query: "Compare o resultado em Matematica entre Brasil, Chile e Uruguai no PISA 2022."
@@ -197,6 +208,7 @@
   primary_source: "OECD PISA 2022 Results, Country Notes LATAM"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-013
   query: "Compare a taxa de matricula liquida no ensino medio entre Brasil e Chile em 2021."
@@ -212,6 +224,7 @@
   primary_source: "UNESCO UIS + IBGE/INEP"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-014
   query: "Compare a escolaridade media de adultos 25+ entre Brasil e Portugal em 2022."
@@ -227,6 +240,7 @@
   primary_source: "OECD Education at a Glance 2023 + IBGE PNAD"
   notes: "Valores proximos; checar definicao exata na Fase 2"
   _verified: false
+  bloom_level: understand
 
 - id: C-015
   query: "Compare a relacao aluno-professor na educacao primaria entre Brasil e media OCDE em 2021."
@@ -241,6 +255,7 @@
   primary_source: "OECD Education at a Glance 2023, Table D2.2"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-016
   query: "Compare a nota em Matematica entre Brasil e Finlandia no PISA 2022."
@@ -256,6 +271,7 @@
   primary_source: "OECD PISA 2022 Results"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-017
   query: "Compare o gasto publico em educacao como % do PIB entre Brasil e Finlandia em 2020."
@@ -270,7 +286,8 @@
   sources_required: ["World Bank", "OECD"]
   primary_source: "World Bank EdStats e OECD EAG"
   notes: null
-  _verified: false
+  _verified: true
+  bloom_level: understand
 
 - id: C-018
   query: "Compare a taxa de conclusao do ensino superior 25-34 anos entre Brasil e media OCDE em 2022."
@@ -285,6 +302,7 @@
   primary_source: "OECD Education at a Glance 2023, Table A1.2"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-019
   query: "Compare a participacao da educacao publica vs privada no Brasil entre o ensino fundamental e o ensino superior em 2022."
@@ -300,6 +318,7 @@
   primary_source: "INEP Censo Escolar 2022 + Censo da Educacao Superior 2022"
   notes: "Quase inversao entre nivel basico (publico) e superior (privado)"
   _verified: false
+  bloom_level: analyze
 
 - id: C-020
   query: "Compare a media de aprendizagem em Leitura entre Brasil, Espanha e Italia no PISA 2022."
@@ -316,6 +335,7 @@
   primary_source: "OECD PISA 2022 Results, Country Notes"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-021
   query: "Compare a porcentagem de jovens 18-24 fora do ensino e fora do trabalho (NEET) entre Brasil e media OCDE em 2021."
@@ -330,6 +350,7 @@
   primary_source: "OECD Education at a Glance 2023, Table A2.1 + IBGE PNAD"
   notes: null
   _verified: false
+  bloom_level: understand
 
 - id: C-022
   query: "Compare a media OCDE em Matematica no PISA 2018 e 2022."
@@ -345,3 +366,4 @@
   primary_source: "OECD PISA 2018 + 2022"
   notes: "Queda de ~15 pts na media OCDE pos-pandemia"
   _verified: false
+  bloom_level: analyze
