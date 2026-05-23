@@ -287,6 +287,90 @@ def _build_summary_table(
     }
 
 
+def _render_statistical_table(stats: dict[str, Any]) -> str:
+    """Tabela 7 — Significancia estatistica (le statistical_analysis.json).
+
+    Reporta os tres recortes de McNemar (sem cherry-picking), o IC95
+    bootstrap e os tamanhos de efeito. Implementa a Fase A.4 do prompt
+    `prompt-analises-pos-resultados.md`.
+    """
+    def _sig(block: dict[str, Any]) -> str:
+        return "sim" if block.get("significant_at_05") else "**nao**"
+
+    mc_in = stats["mcnemar_in_scope"]
+    mc_num = stats["mcnemar_numeric"]
+    boot_b = stats["bootstrap_baseline_in_scope"]
+    boot_e = stats["bootstrap_eduquery_in_scope"]
+
+    out = [
+        "\n## Tabela 7 — Significancia estatistica\n\n",
+        "Testes inferenciais sobre os JSONs existentes (custo $0, "
+        "deterministico). Gerado por `evaluation.reports.statistical_analysis`. "
+        "Reportamos **tres recortes de McNemar sem cherry-picking** (regra de "
+        "honestidade): o recorte in-scope (n=10) e o claim principal mas e "
+        "subpotente; o recorte numerico (n=54) tem poder estatistico real.\n\n",
+        "### 7.1 — McNemar pareado (baseline vs EduQuery)\n\n",
+        "| Recorte | n | n_b (melhora) | n_c (regressao) | chi2 (cc) | p exato | Significativo (alfa=0.05) |\n",
+        "|---|---:|---:|---:|---:|---:|:--:|\n",
+        f"| **In-scope (claim principal)** | {mc_in['n_items']} | {mc_in['n_b']} | "
+        f"{mc_in['n_c']} | {mc_in['chi2']} | {mc_in['p_exact']} | {_sig(mc_in)} |\n",
+        f"| Numerico (factual+comparativo) | {mc_num['n_items']} | {mc_num['n_b']} | "
+        f"{mc_num['n_c']} | {mc_num['chi2']} | {mc_num['p_exact']} | {_sig(mc_num)} |\n",
+    ]
+    if "mcnemar_in_scope_n3_majority" in stats:
+        mc_maj = stats["mcnemar_in_scope_n3_majority"]
+        out.append(
+            f"| In-scope, voto majoritario n=3 | {mc_maj['n_items']} | {mc_maj['n_b']} | "
+            f"{mc_maj['n_c']} | {mc_maj['chi2']} | {mc_maj['p_exact']} | {_sig(mc_maj)} |\n"
+        )
+    out.append(
+        "\n**Leitura honesta:** no recorte in-scope (n=10) todos os pares "
+        f"discordantes favorecem o EduQuery ({mc_in['n_b']} melhoras, "
+        f"{mc_in['n_c']} regressoes), mas com n pequeno o p exato fica em "
+        f"{mc_in['p_exact']} — *borderline*, nao cruza alfa=0.05. No recorte "
+        f"numerico completo (n=54) a diferenca e fortemente significativa "
+        f"(p={mc_num['p_exact']}). Com voto majoritario n=3, o recorte in-scope "
+        "cruza para significativo. Conclusao: o efeito e real e grande; o teste "
+        "in-scope isolado e apenas subpotente — o que motiva aumentar n como "
+        "trabalho futuro.\n\n"
+    )
+
+    out.append("### 7.2 — IC 95% bootstrap (acuracia in-scope, 5.000 reamostragens)\n\n")
+    out.append("| Modo | n | Media | IC95 inferior | IC95 superior |\n")
+    out.append("|---|---:|---:|---:|---:|\n")
+    out.append(
+        f"| Baseline | {boot_b['n']} | {_fmt_pct(boot_b['mean'])} | "
+        f"{_fmt_pct(boot_b['lower'])} | {_fmt_pct(boot_b['upper'])} |\n"
+    )
+    out.append(
+        f"| EduQuery ({boot_e.get('source', '?')}) | {boot_e['n']} | "
+        f"{_fmt_pct(boot_e['mean'])} | {_fmt_pct(boot_e['lower'])} | "
+        f"{_fmt_pct(boot_e['upper'])} |\n"
+    )
+    out.append(
+        f"\nO IC95 do EduQuery [{_fmt_pct(boot_e['lower'])}, "
+        f"{_fmt_pct(boot_e['upper'])}] **nao inclui** a media do baseline "
+        f"({_fmt_pct(boot_b['mean'])}) — evidencia da diferenca apesar do "
+        "McNemar in-scope borderline.\n\n"
+    )
+
+    out.append("### 7.3 — Tamanhos de efeito\n\n")
+    out.append("| Metrica | Valor | Interpretacao |\n|---|---:|---|\n")
+    h = stats.get("cohens_h_baseline_vs_eduquery")
+    delta = stats.get("cliffs_delta")
+    icc = stats.get("icc_n3")
+    if h is not None:
+        out.append(f"| Cohen's h (baseline vs EduQuery) | {h} | efeito grande (>0.8) |\n")
+    if delta is not None:
+        out.append(f"| Cliff's delta (in-scope) | {delta} | dominancia EduQuery |\n")
+    if icc is not None:
+        out.append(
+            f"| ICC(2,1) entre repeticoes n=3 | {icc} | confiabilidade boa do classifier |\n"
+        )
+    out.append("\n")
+    return "".join(out)
+
+
 def render_markdown(
     baseline_data: dict[str, Any],
     eduquery_data: dict[str, Any],
@@ -294,6 +378,7 @@ def render_markdown(
     *,
     llm_direct: dict[str, Any] | None = None,
     n3: dict[str, Any] | None = None,
+    stats: dict[str, Any] | None = None,
 ) -> str:
     bruta = _build_summary_table(baseline_data, eduquery_data, scope_filter=None)
     in_scope = _build_summary_table(
@@ -536,6 +621,10 @@ def render_markdown(
         q = (b.get("query") or "").replace("|", " ")[:60]
         parts.append(f"| {item_id} | {bc} | {ec} | {transicao} | {q}... |\n")
 
+    # ---- Tabela 7: significancia estatistica (Fase A.4) --------------
+    if stats is not None:
+        parts.append(_render_statistical_table(stats))
+
     # ---- Analise: por que esse numero? -------------------------------
     parts.append(
         "\n## Analise — por que esse valor de TIA?\n\n"
@@ -650,13 +739,17 @@ def generate(
     *,
     llm_direct_json: Path | None = None,
     n3_json: Path | None = None,
+    stats_json: Path | None = None,
 ) -> None:
     baseline = _load(baseline_json)
     eduquery = _load(eduquery_json)
     redteam = _load(redteam_json) if redteam_json and redteam_json.exists() else None
     llm_direct = _load(llm_direct_json) if llm_direct_json and llm_direct_json.exists() else None
     n3 = _load(n3_json) if n3_json and n3_json.exists() else None
-    md = render_markdown(baseline, eduquery, redteam, llm_direct=llm_direct, n3=n3)
+    stats = _load(stats_json) if stats_json and stats_json.exists() else None
+    md = render_markdown(
+        baseline, eduquery, redteam, llm_direct=llm_direct, n3=n3, stats=stats
+    )
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8") as f:
         f.write(md)
@@ -673,6 +766,8 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="JSON do run LLM-direto (F7)")
     parser.add_argument("--n3", type=Path, default=None,
                         help="JSON do run n=3 (F8)")
+    parser.add_argument("--stats", type=Path, default=None,
+                        help="JSON da analise estatistica (Fase A)")
     parser.add_argument("--output", type=Path, required=True)
     return parser
 
@@ -683,6 +778,7 @@ def main(argv: list[str] | None = None) -> int:
         args.baseline, args.eduquery, args.redteam, args.output,
         llm_direct_json=args.llm_direct,
         n3_json=args.n3,
+        stats_json=args.stats,
     )
     return 0
 

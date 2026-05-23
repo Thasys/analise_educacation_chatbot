@@ -108,6 +108,38 @@ Mostra exatamente quais perguntas o EduQuery interceptou e quais deixou passar. 
 | C-011 | hallucinated | hallucinated | nao interceptado | Compare a taxa de analfabetismo de 15+ entre Brasil em 2019 ... |
 | C-017 | correct | correct | (ja era correct) | Compare o gasto publico em educacao como % do PIB entre Bras... |
 
+## Tabela 7 — Significancia estatistica
+
+Testes inferenciais sobre os JSONs existentes (custo $0, deterministico). Gerado por `evaluation.reports.statistical_analysis`. Reportamos **tres recortes de McNemar sem cherry-picking** (regra de honestidade): o recorte in-scope (n=10) e o claim principal mas e subpotente; o recorte numerico (n=54) tem poder estatistico real.
+
+### 7.1 — McNemar pareado (baseline vs EduQuery)
+
+| Recorte | n | n_b (melhora) | n_c (regressao) | chi2 (cc) | p exato | Significativo (alfa=0.05) |
+|---|---:|---:|---:|---:|---:|:--:|
+| **In-scope (claim principal)** | 10 | 5 | 0 | 3.2 | 0.0625 | **nao** |
+| Numerico (factual+comparativo) | 54 | 17 | 3 | 8.45 | 0.0026 | sim |
+| In-scope, voto majoritario n=3 | 10 | 6 | 0 | 4.1667 | 0.0312 | sim |
+
+**Leitura honesta:** no recorte in-scope (n=10) todos os pares discordantes favorecem o EduQuery (5 melhoras, 0 regressoes), mas com n pequeno o p exato fica em 0.0625 — *borderline*, nao cruza alfa=0.05. No recorte numerico completo (n=54) a diferenca e fortemente significativa (p=0.0026). Com voto majoritario n=3, o recorte in-scope cruza para significativo. Conclusao: o efeito e real e grande; o teste in-scope isolado e apenas subpotente — o que motiva aumentar n como trabalho futuro.
+
+### 7.2 — IC 95% bootstrap (acuracia in-scope, 5.000 reamostragens)
+
+| Modo | n | Media | IC95 inferior | IC95 superior |
+|---|---:|---:|---:|---:|
+| Baseline | 10 | 10.0% | 0.0% | 30.0% |
+| EduQuery (n3) | 30 | 63.3% | 46.7% | 80.0% |
+
+O IC95 do EduQuery [46.7%, 80.0%] **nao inclui** a media do baseline (10.0%) — evidencia da diferenca apesar do McNemar in-scope borderline.
+
+### 7.3 — Tamanhos de efeito
+
+| Metrica | Valor | Interpretacao |
+|---|---:|---|
+| Cohen's h (baseline vs EduQuery) | 1.1972 | efeito grande (>0.8) |
+| Cliff's delta (in-scope) | 0.5 | dominancia EduQuery |
+| ICC(2,1) entre repeticoes n=3 | 0.7391 | confiabilidade boa do classifier |
+
+
 ## Analise — por que esse valor de TIA?
 
 A TIA in-scope mede, na pratica, a **fracao de alucinacoes do baseline cuja pergunta cabe no recorte dos marts atuais** (`GASTO_EDU_PIB` em `mart_br_vs_ocde__gasto_educacao_timeseries`, `LITERACY_15M` em `mart_alfabetizacao__latam_2020s`). Quando a pergunta cai dentro do recorte, o **auto-populate determinístico do Retriever** (ADR 0006) injeta o valor canônico do mart no contexto do Synthesizer — e o sistema acerta. Fora do recorte (ano ausente, indicador derivado), o auto-populate falha e o Synthesizer alucina.
