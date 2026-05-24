@@ -19,6 +19,7 @@ from src.tools.data_tools import (
 )
 from src.tools.stats_tools import (
     ComputeStatsTool,
+    compute_divergence,
     compute_position,
     compute_summary_stats,
 )
@@ -41,6 +42,7 @@ __all__ = [
     "RAGSearchTool",
     "build_data_tools",
     "build_rag_tools",
+    "compute_divergence",
     "compute_position",
     "compute_summary_stats",
     "make_plotly_bar_horizontal",

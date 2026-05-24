@@ -106,6 +106,37 @@ def compute_position(
     }
 
 
+def compute_divergence(
+    values: list[float],
+    *,
+    threshold: float = 0.05,
+) -> dict[str, Any]:
+    """Dispersao relativa entre fontes para o MESMO pais-ano-indicador.
+
+    Usado para detectar `cross_source_contradiction`: quando varias fontes
+    (IBGE, UNESCO, World Bank...) reportam valores diferentes para a mesma
+    observacao, a resposta deve ser apresentada como divergencia/intervalo.
+
+    divergence_pct = |max - min| / |median|. `divergence_detected` e True
+    quando divergence_pct > threshold (default 5%). Com < 2 valores ou
+    mediana 0, nao ha divergencia mensuravel.
+    """
+    clean = [v for v in values if v is not None]
+    if len(clean) < 2:
+        return {"divergence_pct": 0.0, "divergence_detected": False, "n_sources": len(clean)}
+    median = statistics.median(clean)
+    if median == 0:
+        return {"divergence_pct": 0.0, "divergence_detected": False, "n_sources": len(clean)}
+    pct = abs(max(clean) - min(clean)) / abs(median)
+    return {
+        "divergence_pct": pct,
+        "divergence_detected": pct > threshold,
+        "n_sources": len(clean),
+        "min": min(clean),
+        "max": max(clean),
+    }
+
+
 # ----------------------------------------------------------------------
 # Tool CrewAI
 # ----------------------------------------------------------------------
@@ -126,6 +157,14 @@ class ComputeStatsArgs(BaseModel):
         description=(
             "True para metricas onde alto=bom (gasto educacional, alfab). "
             "False para metricas onde baixo=bom (taxa abandono, analfab)."
+        ),
+    )
+    source_values: list[float] | None = Field(
+        default=None,
+        description=(
+            "Valores do MESMO pais-ano reportados por fontes diferentes "
+            "(IBGE, UNESCO, WB...). Quando passado, retorna 'divergence' com "
+            "divergence_pct e divergence_detected (cross_source_contradiction)."
         ),
     )
 
@@ -151,6 +190,7 @@ class ComputeStatsTool(SafeTool):
         values: list[float],
         focus_value: float | None = None,
         higher_is_better: bool = True,
+        source_values: list[float] | None = None,
     ) -> str:
         if not values:
             raise ValueError("values precisa de pelo menos 1 elemento.")
@@ -162,6 +202,8 @@ class ComputeStatsTool(SafeTool):
             result["focus_position"] = compute_position(
                 focus_value, values, higher_is_better=higher_is_better
             )
+        if source_values is not None:
+            result["divergence"] = compute_divergence(source_values)
         return json.dumps(result, default=_json_default)
 
 

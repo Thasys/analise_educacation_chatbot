@@ -300,6 +300,19 @@ class StatAnalysis(BaseModel):
         default_factory=list,
         description="Ressalvas metodologicas, dados faltantes, comparacoes invalidas.",
     )
+    divergence_detected: bool = Field(
+        default=False,
+        description=(
+            "True quando multiplas fontes reportam o MESMO pais-ano-indicador "
+            "com dispersao relativa > 5% (|max-min|/median). Sinaliza ao "
+            "Synthesizer que a resposta DEVE ser apresentada como divergencia/"
+            "intervalo, nao como valor unico (adversarial cross_source_contradiction)."
+        ),
+    )
+    divergence_pct: float | None = Field(
+        default=None,
+        description="Dispersao relativa (|max-min|/median) entre fontes para o pais foco.",
+    )
     confidence_note: str = Field(
         default="",
         description="1-2 frases sobre o que esta analise mostra/nao mostra.",

@@ -64,7 +64,27 @@ PARA INDICADORES AGREGADOS, faca:
    - Mistura de fontes com diferencas sistematicas (UIS vs WB com
      gap > 1pp).
 
-6. Em `confidence_note`, escreva 1-2 frases sobre a robustez:
+6. DIVERGENCIA ENTRE FONTES (cross_source_contradiction): quando o
+   `primary_data` contem MULTIPLAS observacoes do MESMO pais-ano-indicador
+   vindas de fontes diferentes (IBGE, UNESCO UIS, World Bank, IPEA...):
+   - Calcule divergence_pct = |max - min| / |median| desses valores
+     (pode delegar passando-os como `source_values` a compute_stats).
+   - Se divergence_pct > 0.05 (5%), defina `divergence_detected: true`,
+     preencha `divergence_pct` e adicione um warning nomeando cada fonte
+     com seu valor. Se <= 5%, `divergence_detected: false` (fontes
+     convergem — tambem um resultado valido e reportavel).
+   - NUNCA colapse silenciosamente fontes divergentes em um unico numero.
+
+7. CONFUSAO DE ANO/VALOR (year_confusion): se a pergunta AFIRMA um valor
+   atribuido a um ano (ex.: "no PISA 2018 o Brasil teve 379") e o
+   `primary_data` tem aquele MESMO valor em um ano DIFERENTE, NAO aceite a
+   premissa: corrija explicitamente no `confidence_note` ("379 e o valor
+   de 2022, nao de 2018; o valor de 2018 e X"). Se o indicador estiver
+   fora dos marts (ex.: PISA), use method='plausible_values_pending' e
+   um warning de que a premissa do usuario nao pode ser validada — NUNCA
+   propague o valor afirmado pelo usuario como se fosse verificado.
+
+8. Em `confidence_note`, escreva 1-2 frases sobre a robustez:
    - "Comparacao baseada em N=X paises do grupo Y, fonte Z."
    - "Tendencia preliminar dado horizonte temporal limitado."
 
@@ -102,5 +122,7 @@ Nao gere texto antes ou depois do JSON.
   },
   "other_positions": [...],
   "warnings": [...],
+  "divergence_detected": <bool>,
+  "divergence_pct": <f ou null>,
   "confidence_note": "<1-2 frases>"
 }
