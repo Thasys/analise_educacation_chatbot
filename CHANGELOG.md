@@ -9,6 +9,64 @@ podem aparecer em minor releases.
 
 ### Added
 
+- **2026-05-23** — Polimento metodológico pós-resultados (Fases A/B/C do
+  [prompt-analises-pos-resultados.md](docs/evaluation/prompt-analises-pos-resultados.md)),
+  para reforçar a avaliação empírica rumo ao Qualis A3. Custo de API
+  desprezível (apenas re-run de 5 itens + LLM-juiz Batch ≈ \$0,003);
+  todo o resto é determinístico sobre os JSONs existentes.
+  - **Fase A — Análise estatística inferencial** ([análise completa](docs/evaluation/analise-estatistica-resultados.md)):
+    - `agents/evaluation/reports/statistical_analysis.py`: McNemar
+      pareado em 3 recortes (in-scope n=10, numérico n=54, in-scope com
+      voto majoritário n=3) com χ² (correção de continuidade) **e** p
+      exato binomial; bootstrap IC 95% (5.000 reamostragens, seed 42);
+      Cohen's h; Cliff's delta; ICC(2,1) entre repetições.
+    - `render_baseline_comparison_figure.py`: figura PNG (DPI 300, serif)
+      "LLM-direto = Baseline = 10% « EduQuery = 63%".
+    - `generate_paper_table.py`: Tabela 7 (significância) lendo
+      `statistical_analysis.json`. `paper_table.md` regenerado.
+    - **Resultado honesto (regra: números são pontos de chegada):**
+      in-scope isolado é *borderline* (p exato 0,0625 — subpotente, mas
+      5 melhoras / 0 regressões); numérico n=54 fortemente significativo
+      (χ²=8,45, p=0,003); Cohen's h=1,20; IC95 do EduQuery [46,7%, 80,0%]
+      não inclui o baseline (10,0%); ICC=0,74. Os 3 recortes reportados
+      sem cherry-picking.
+    - 19 unit tests novos em `tests/evaluation/test_statistical_analysis.py`.
+  - **Fase B — Avaliação externa (validade de conteúdo)** ([protocolo](docs/evaluation/external-evaluator-protocol.md)):
+    - `external_evaluator_form.py` gera planilha CSV/XLSX (5 in-scope + 5
+      adversariais de categorias distintas) a partir do golden.
+    - `evaluation/shared/import_external_eval.py` importa o retorno e
+      calcula Cohen's kappa + divergências por item; trata o caso
+      degenerado (autor sem variância → reporta concordância observada).
+    - 11 unit tests em `tests/evaluation/test_external_eval.py`.
+    - **Bloqueio honesto:** a etapa de preenchimento depende de recurso
+      humano externo — infraestrutura pronta, dados aguardam.
+  - **Fase C — Correções dos 5 adversariais HALLUCINATED** ([ablação](docs/evaluation/ablation-correcoes-adversariais.md)):
+    - Hardening anti-injeção nos prompts do Orchestrator + Synthesizer
+      (recusam "esquecer os marts / responder com conhecimento geral").
+    - `compute_divergence()` determinístico em `tools/stats_tools.py`
+      (|max-min|/median > 5%) + campos `divergence_detected`/`divergence_pct`
+      no schema `StatAnalysis`; prompts do Statistician/Synthesizer passam
+      a reportar divergência/convergência explícita entre fontes.
+    - Regra de `year_confusion` no Statistician (não propaga valor
+      injetado pelo usuário; corrige o ano quando há dado).
+    - 10 unit tests em `tests/agents/test_adversarial_corrections.py`.
+    - **Re-run real** dos 5 itens (Sonnet 4.5/Haiku 4.5, mesmos modelos
+      da bateria oficial) + TCC 3 camadas: **2/5 → CORRECT** (A-022 recusa
+      a injeção; A-015 disclaimer de escopo). A-011 *gated* na Fase D
+      (PISA fora dos marts). **A-014/A-016 expõem defeito do golden**: as
+      fontes convergem (A-014) ou divergem <5% (A-016), tornando
+      `report_divergence` insatisfazível — encaminhados ao avaliador
+      externo. Sem maquiagem: 27/30 projetado, não os 30/30 do plano.
+  - **Fase D — PISA + IDEB** ([status](docs/evaluation/fase-d-status.md)):
+    IDEB já concluído (ver 2026-05-21). PISA **bloqueada** por 4
+    pré-requisitos ausentes (toolchain R, microdados PISA, dbt no PATH,
+    decisão metodológica ADR 0009 + regra de PAUSE em plausible values).
+  - Dependências: `scipy` + `matplotlib` adicionadas ao `agents/pyproject.toml`.
+  - Testes: 167 verdes na suíte de avaliação + correções (126 originais +
+    41 novos). As 4 falhas pré-existentes em `tests/test_llm.py` (drift
+    LiteLLM/CrewAI: `api_base`→`base_url`) não são regressão deste ciclo.
+  - **No artigo** (`secoes/04_resultados.tex`): parágrafo "Significância
+    estatística" adicionado à Seção 4 (Cohen's h, IC95 bootstrap, McNemar).
 - **2026-05-21** — IDEB Brasil nos marts Gold (Fase A do
   [prompt-implementar-pisa-ideb.md](docs/evaluation/prompt-implementar-pisa-ideb.md)):
   - Coletor `data_pipeline/src/scripts/collect_ideb.py` baixa 6
