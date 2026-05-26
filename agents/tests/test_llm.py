@@ -46,6 +46,11 @@ def reload_llm_module(monkeypatch: pytest.MonkeyPatch):
 def anthropic_env(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("AGENTS_LLM_PROVIDER", "anthropic")
     monkeypatch.setenv("AGENTS_LLM_API_KEY", "sk-ant-test-key-fake")
+    # Fixa os modelos para nao herdar a config ativa do .env (ex.: quando
+    # o autor esta em ciclo de testes com Gemini, sem essa fixacao os
+    # testes Anthropic herdam 'gemini-2.5-flash-lite' e falham).
+    monkeypatch.setenv("AGENTS_LLM_SMART_MODEL", "claude-sonnet-4-5")
+    monkeypatch.setenv("AGENTS_LLM_FAST_MODEL", "claude-haiku-4-5")
     monkeypatch.delenv("AGENTS_LLM_API_BASE", raising=False)
     yield
 
@@ -112,8 +117,13 @@ def test_make_llm_ollama_uses_local_endpoint(ollama_env, reload_llm_module):
     llm = reload_llm_module().make_llm("smart")
     assert isinstance(llm, BaseLLM)
     assert "llama3.1:70b" in llm.model
-    # `api_base` deve ser propagado para o cliente LiteLLM.
-    assert getattr(llm, "api_base", None) == "http://localhost:11434"
+    # O endpoint Ollama agora e propagado via `base_url` no cliente
+    # OpenAI-compativel (versao recente do CrewAI/LiteLLM). O `/v1` e
+    # apendado pelo cliente; aceitamos com ou sem ele para tolerar futuras
+    # mudancas de empacotamento.
+    endpoint = getattr(llm, "base_url", None) or getattr(llm, "api_base", None)
+    assert endpoint is not None
+    assert "localhost:11434" in endpoint
 
 
 def test_make_llm_ollama_does_not_require_key(ollama_env, reload_llm_module):
