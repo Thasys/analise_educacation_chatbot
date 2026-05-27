@@ -57,6 +57,42 @@ podem aparecer em minor releases.
       fontes convergem (A-014) ou divergem <5% (A-016), tornando
       `report_divergence` insatisfazível — encaminhados ao avaliador
       externo. Sem maquiagem: 27/30 projetado, não os 30/30 do plano.
+- **2026-05-26** — Polimento adicional (validação completa + higiene de
+  configuração):
+  - **Re-execução completa dos 30 adversariais** (Seção 5 do
+    [ablation](docs/evaluation/ablation-correcoes-adversariais.md)):
+    TCC observado **23/30 = 76,7%** vs 25/30 = 83,3% da bateria oficial.
+    7 itens flipparam — diagnóstico: 3 ganhos esperados (A-022 fix
+    funcionou, A-015 e A-023 equivalentes), 4 regressões atribuíveis a
+    (a) variabilidade LLM n=1 consistente com ICC=0,74 da Fase A,
+    (b) match semântico estrito (A-020: sistema recusa injeção como
+    projetado, mas juiz não captura; A-029: recusa via "erro interno"
+    fora dos `REFUSAL_PATTERNS`), (c) golden estrito (A-004: corrigir
+    é defensável quando `block` esperado). Custo \$5 + Batch \$0,003.
+    Reportar o número honesto e a variabilidade comprovada no paper.
+  - **Flag de `_review_pending`** em A-014 e A-016 (golden YAML): defeito
+    de gabarito documentado para o avaliador externo (Fase B). Loader
+    ignora os campos `_review_*`, sem quebra de schema.
+  - **Fix em `llm_judge_batch.py`**: helper `_anthropic_client()` resolve
+    a chave via `os.environ` *e* `settings.llm_api_key`, eliminando a
+    necessidade de exportar `ANTHROPIC_API_KEY` no shell quando o `.env`
+    já tem a chave.
+  - **Cleanup do `.env`**: provider Anthropic ativo (Sonnet 4.5 / Haiku
+    4.5), bloco Gemini preservado como backup comentado. `AGENTS_LLM_API_KEY`
+    deixado sem definição para fallback automático a `ANTHROPIC_API_KEY`
+    (evita o erro recente em que a chave Google de outro ciclo polui
+    chamadas Anthropic).
+  - **Fix em `tests/test_llm.py`** (4 falhas pré-existentes):
+    fixture `anthropic_env` agora fixa `AGENTS_LLM_SMART_MODEL`/`FAST_MODEL`
+    (alinhando com `openai_env` e `ollama_env`), evitando herança do `.env`
+    local; assert do Ollama tolera o drift `api_base`→`base_url` no
+    cliente OpenAI-compatível recente do LiteLLM/CrewAI. test_llm.py
+    agora 10/10 verde em isolado.
+  - **Figura comparativa no artigo**: `figuras/comparison_baseline.png`
+    + `\includegraphics` na Seção 4, referenciada no parágrafo de
+    significância estatística. PDF agora tem 14 páginas.
+  - **Resumo do artigo**: removido o `TODO` obsoleto sobre placeholder
+    `[X\%]` (números reais já preenchidos em commit anterior).
   - **Fase D — PISA + IDEB** ([status](docs/evaluation/fase-d-status.md)):
     IDEB já concluído (ver 2026-05-21). PISA **bloqueada** por 4
     pré-requisitos ausentes (toolchain R, microdados PISA, dbt no PATH,

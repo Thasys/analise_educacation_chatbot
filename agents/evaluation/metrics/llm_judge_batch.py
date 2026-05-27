@@ -25,9 +25,34 @@ import logging
 import os
 import time
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Any, Iterable
 
 logger = logging.getLogger(__name__)
+
+
+def _anthropic_client() -> Any:
+    """Constroi `anthropic.Anthropic()` com api_key resolvida.
+
+    O SDK do Anthropic le `ANTHROPIC_API_KEY` do `os.environ`, mas
+    `pydantic-settings` (settings.llm_api_key) carrega o `.env` para o
+    objeto `settings`, nao para o `os.environ`. Resultado: chamadas
+    diretas falhavam com 'Could not resolve authentication method' quando
+    o usuario nao exportava `ANTHROPIC_API_KEY` no shell.
+
+    Aqui resolvemos a chave explicitamente: tenta `os.environ` primeiro
+    (precedencia natural) e cai em `settings.llm_api_key` se ausente.
+    """
+    import anthropic  # type: ignore[import-not-found]
+
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if not key:
+        try:
+            from src.config import settings
+
+            key = settings.llm_api_key if settings.llm_provider == "anthropic" else None
+        except Exception:  # noqa: BLE001
+            key = None
+    return anthropic.Anthropic(api_key=key) if key else anthropic.Anthropic()
 
 
 # Pricing batch Haiku 4.5 (50% desconto).
@@ -123,11 +148,10 @@ def submit_judge_batch(requests: list[dict]) -> str:
     if not requests:
         raise ValueError("Nenhum request para submeter.")
     try:
-        import anthropic  # type: ignore[import-not-found]
+        client = _anthropic_client()
     except ImportError as e:
         raise RuntimeError(f"anthropic SDK ausente: {e}") from e
 
-    client = anthropic.Anthropic()
     batch = client.messages.batches.create(requests=requests)
     logger.info(
         "evaluation.batch.submitted",
@@ -147,9 +171,7 @@ def poll_batch_until_done(
     Raises:
         TimeoutError: se exceder timeout_s.
     """
-    import anthropic  # type: ignore[import-not-found]
-
-    client = anthropic.Anthropic()
+    client = _anthropic_client()
     t0 = time.monotonic()
     while True:
         batch = client.messages.batches.retrieve(batch_id)
@@ -168,9 +190,7 @@ def poll_batch_until_done(
 
 def fetch_judge_results(batch_id: str) -> BatchResult:
     """Recupera resultados do batch. Soma custo (estimativa)."""
-    import anthropic  # type: ignore[import-not-found]
-
-    client = anthropic.Anthropic()
+    client = _anthropic_client()
     decisions: dict[str, bool] = {}
     errors: dict[str, str] = {}
     total_input = 0
