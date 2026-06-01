@@ -5,6 +5,12 @@
 !/data/.gitkeep
 
 # =============================================================================
+# Backup local de notas internas removidas da publicacao double-blind
+# (preservadas no disco, NUNCA versionadas / NUNCA servidas pelo 4open)
+# =============================================================================
+notas-internas-local/
+
+# =============================================================================
 # Secrets e ambiente
 # =============================================================================
 .env
