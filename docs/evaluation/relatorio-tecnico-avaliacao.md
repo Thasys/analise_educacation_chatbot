@@ -855,6 +855,6 @@ agents/tests/evaluation/
 ---
 
 **Documento gerado em:** 2026-05-20
-**Autor:** Tharsys (engenharia + análise)
+**Autor:** Anonymized (double-blind review)
 **Versão do EduQuery avaliada:** commit `7652146`
 **Para:** Avaliação acadêmica orientada

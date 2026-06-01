@@ -357,7 +357,7 @@ por design) é a decisão arquitetural mais relevante a tomar a seguir.
 ## Anexo A — Payload completo do teste de referência
 
 Disponível em
-`C:\Users\thars\AppData\Local\Temp\claude\C--Users-thars\3b558f9a-b216-46c5-811d-1a3fb5638c9a\tasks\besuap0az.output`
+`<caminho-temporário-local>`
 (arquivo temporário; copiar antes de limpeza). Pergunta:
 
 > "Compare o investimento em educacao como % do PIB entre Brasil, Mexico e Chile em 2022."

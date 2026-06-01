@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Coletores e flows Prefect para ingestão de bases educacionais (Camada Bronze)"
 requires-python = ">=3.11"
 authors = [
-    { name = "Tharsys Ribeiro", email = "tharsyssribeiro@gmail.com" }
+    { name = "Anonymous (double-blind review)" }
 ]
 dependencies = [
     "prefect>=3.0",

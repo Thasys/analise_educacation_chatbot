@@ -33,7 +33,7 @@ sistema EduQuery que alimenta a Seção 4 (Resultados) do artigo SBIE
 
 ## Vínculo com o artigo
 
-- Repositório do artigo: `C:\Users\thars\OneDrive\Documentos\ARTIGO SBIE\artigo\`
+- Repositório do artigo: (mantido fora deste repo)
 - Trilha: TPIE (Pesquisa em Informática na Educação), Qualis A3
 - Prazos: registro de resumo no JEMS em 2026-05-18; upload PDF em
   2026-05-20; notificação de aceite em 2026-07-08
